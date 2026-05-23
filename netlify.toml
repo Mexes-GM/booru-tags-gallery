@@ -1,0 +1,35 @@
+[build]
+  publish = "dist"
+  command = "npm run build:production"
+
+[build.environment]
+  NODE_VERSION = "20"
+  NPM_FLAGS = "--production=false"
+  NODE_ENV = "production"
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Deshabilitamos el procesamiento de Netlify para evitar conflictos con Vite
+[build.processing]
+  skip_processing = true
+
+# Headers de seguridad básicos
+[[headers]]
+  for = "/*"
+  [headers.values]
+    # Eliminados X-Frame-Options y X-XSS-Protection (obsoletos)
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    # Añadimos frame-ancestors a CSP para reemplazar X-Frame-Options
+    Content-Security-Policy = "default-src 'self'; frame-ancestors 'none'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://danbooru.donmai.us https://*.netlify.app; font-src 'self' data:;"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+
+# Netlify maneja automáticamente la compresión gzip/brotli
+# No necesitamos especificar Content-Encoding manualmente

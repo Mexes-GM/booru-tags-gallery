@@ -1,0 +1,1054 @@
+{
+  "fetchedAt": "2025-08-08T20:44:38.492Z",
+  "source": "https://danbooru.donmai.us/wiki_pages/tag_groups",
+  "count": 89,
+  "groups": [
+    {
+      "id": "accessories",
+      "title": "tag_group:accessories",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Aaccessories",
+      "parents": [
+        "attire"
+      ],
+      "children": [
+        "headwear",
+        "eyewear",
+        "neck_and_neckwear",
+        "handwear",
+        "legwear",
+        "piercings",
+        "attire"
+      ]
+    },
+    {
+      "id": "artistic_license",
+      "title": "tag_group:artistic_license",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Aartistic_license",
+      "parents": [
+        "handwear"
+      ],
+      "children": []
+    },
+    {
+      "id": "ass",
+      "title": "tag_group:ass",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Aass",
+      "parents": [
+        "body_parts",
+        "pussy"
+      ],
+      "children": [
+        "pussy"
+      ]
+    },
+    {
+      "id": "attire",
+      "title": "tag_group:attire",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Aattire",
+      "parents": [
+        "breasts_tags",
+        "accessories",
+        "dress",
+        "handwear",
+        "headwear",
+        "legwear",
+        "sexual_attire",
+        "bra",
+        "panties",
+        "sleeves",
+        "eyewear",
+        "fashion_style",
+        "piercings",
+        "technology"
+      ],
+      "children": [
+        "headwear",
+        "dress",
+        "sleeves",
+        "legwear",
+        "eyewear",
+        "neck_and_neckwear",
+        "piercings",
+        "accessories",
+        "fashion_style",
+        "sexual_attire",
+        "bra",
+        "panties",
+        "nudity"
+      ]
+    },
+    {
+      "id": "audio_tags",
+      "title": "tag_group:audio_tags",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Aaudio_tags",
+      "parents": [
+        "technology"
+      ],
+      "children": []
+    },
+    {
+      "id": "backgrounds",
+      "title": "tag_group:backgrounds",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Abackgrounds",
+      "parents": [
+        "image_composition",
+        "colors"
+      ],
+      "children": []
+    },
+    {
+      "id": "birds",
+      "title": "tag_group:birds",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Abirds",
+      "parents": [],
+      "children": []
+    },
+    {
+      "id": "board_games",
+      "title": "tag_group:board_games",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Aboard_games",
+      "parents": [],
+      "children": []
+    },
+    {
+      "id": "body_parts",
+      "title": "tag_group:body_parts",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Abody_parts",
+      "parents": [
+        "breasts_tags",
+        "ears_tags",
+        "penis",
+        "shoulders",
+        "covering"
+      ],
+      "children": [
+        "ears_tags",
+        "eyes_tags",
+        "face_tags",
+        "hair",
+        "hair_color",
+        "hair_styles",
+        "breasts_tags",
+        "shoulders",
+        "ass",
+        "pussy",
+        "penis",
+        "tail",
+        "wings",
+        "posture",
+        "sexual_positions",
+        "skin_color"
+      ]
+    },
+    {
+      "id": "bra",
+      "title": "tag_group:bra",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Abra",
+      "parents": [
+        "attire",
+        "sexual_attire",
+        "panties"
+      ],
+      "children": [
+        "attire",
+        "panties",
+        "sexual_attire"
+      ]
+    },
+    {
+      "id": "breasts_tags",
+      "title": "tag_group:breasts_tags",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Abreasts_tags",
+      "parents": [
+        "body_parts",
+        "sex_acts"
+      ],
+      "children": [
+        "body_parts",
+        "attire",
+        "sexual_attire",
+        "nudity"
+      ]
+    },
+    {
+      "id": "cards",
+      "title": "tag_group:cards",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Acards",
+      "parents": [],
+      "children": []
+    },
+    {
+      "id": "cats",
+      "title": "tag_group:cats",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Acats",
+      "parents": [],
+      "children": []
+    },
+    {
+      "id": "censorship",
+      "title": "tag_group:censorship",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Acensorship",
+      "parents": [
+        "image_composition",
+        "covering"
+      ],
+      "children": [
+        "hair_styles",
+        "covering"
+      ]
+    },
+    {
+      "id": "colors",
+      "title": "tag_group:colors",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Acolors",
+      "parents": [
+        "image_composition",
+        "focus_tags",
+        "prints",
+        "skin_color"
+      ],
+      "children": [
+        "image_composition",
+        "prints",
+        "backgrounds",
+        "skin_color"
+      ]
+    },
+    {
+      "id": "companies_and_brand_names",
+      "title": "tag_group:companies_and_brand_names",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Acompanies_and_brand_names",
+      "parents": [],
+      "children": [
+        "sports"
+      ]
+    },
+    {
+      "id": "covering",
+      "title": "tag_group:covering",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Acovering",
+      "parents": [
+        "censorship"
+      ],
+      "children": [
+        "body_parts",
+        "censorship"
+      ]
+    },
+    {
+      "id": "dances",
+      "title": "tag_group:dances",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Adances",
+      "parents": [],
+      "children": []
+    },
+    {
+      "id": "dogs",
+      "title": "tag_group:dogs",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Adogs",
+      "parents": [],
+      "children": []
+    },
+    {
+      "id": "drawing_software",
+      "title": "tag_group:drawing_software",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Adrawing_software",
+      "parents": [
+        "image_composition",
+        "metatags"
+      ],
+      "children": []
+    },
+    {
+      "id": "dress",
+      "title": "tag_group:dress",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Adress",
+      "parents": [
+        "attire",
+        "sleeves"
+      ],
+      "children": [
+        "attire"
+      ]
+    },
+    {
+      "id": "ears_tags",
+      "title": "tag_group:ears_tags",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Aears_tags",
+      "parents": [
+        "body_parts"
+      ],
+      "children": [
+        "body_parts"
+      ]
+    },
+    {
+      "id": "embellishment",
+      "title": "tag_group:embellishment",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Aembellishment",
+      "parents": [],
+      "children": []
+    },
+    {
+      "id": "eyes_tags",
+      "title": "tag_group:eyes_tags",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Aeyes_tags",
+      "parents": [
+        "body_parts",
+        "face_tags",
+        "posture"
+      ],
+      "children": [
+        "face_tags"
+      ]
+    },
+    {
+      "id": "eyewear",
+      "title": "tag_group:eyewear",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Aeyewear",
+      "parents": [
+        "accessories",
+        "attire",
+        "headwear"
+      ],
+      "children": [
+        "attire"
+      ]
+    },
+    {
+      "id": "face_tags",
+      "title": "tag_group:face_tags",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Aface_tags",
+      "parents": [
+        "body_parts",
+        "eyes_tags"
+      ],
+      "children": [
+        "eyes_tags"
+      ]
+    },
+    {
+      "id": "family_relationships",
+      "title": "tag_group:family_relationships",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Afamily_relationships",
+      "parents": [
+        "groups"
+      ],
+      "children": []
+    },
+    {
+      "id": "fashion_style",
+      "title": "tag_group:fashion_style",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Afashion_style",
+      "parents": [
+        "visual_aesthetic",
+        "attire"
+      ],
+      "children": [
+        "attire",
+        "visual_aesthetic"
+      ]
+    },
+    {
+      "id": "fighting_games",
+      "title": "tag_group:fighting_games",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Afighting_games",
+      "parents": [
+        "video_game"
+      ],
+      "children": []
+    },
+    {
+      "id": "fire",
+      "title": "tag_group:fire",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Afire",
+      "parents": [],
+      "children": []
+    },
+    {
+      "id": "flowers",
+      "title": "tag_group:flowers",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Aflowers",
+      "parents": [],
+      "children": []
+    },
+    {
+      "id": "focus_tags",
+      "title": "tag_group:focus_tags",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Afocus_tags",
+      "parents": [
+        "image_composition"
+      ],
+      "children": [
+        "colors"
+      ]
+    },
+    {
+      "id": "food_tags",
+      "title": "tag_group:food_tags",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Afood_tags",
+      "parents": [],
+      "children": []
+    },
+    {
+      "id": "gestures",
+      "title": "tag_group:gestures",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Agestures",
+      "parents": [
+        "hands",
+        "posture"
+      ],
+      "children": [
+        "hands",
+        "posture"
+      ]
+    },
+    {
+      "id": "groups",
+      "title": "tag_group:groups",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Agroups",
+      "parents": [],
+      "children": [
+        "family_relationships",
+        "sex_acts",
+        "sexual_positions"
+      ]
+    },
+    {
+      "id": "hair",
+      "title": "tag_group:hair",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Ahair",
+      "parents": [
+        "body_parts",
+        "hair_color",
+        "hair_styles"
+      ],
+      "children": [
+        "hair_color",
+        "hair_styles"
+      ]
+    },
+    {
+      "id": "hair_color",
+      "title": "tag_group:hair_color",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Ahair_color",
+      "parents": [
+        "body_parts",
+        "hair",
+        "hair_styles",
+        "skin_color"
+      ],
+      "children": [
+        "hair_styles",
+        "hair"
+      ]
+    },
+    {
+      "id": "hair_styles",
+      "title": "tag_group:hair_styles",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Ahair_styles",
+      "parents": [
+        "censorship",
+        "body_parts",
+        "hair",
+        "hair_color",
+        "tail"
+      ],
+      "children": [
+        "hair",
+        "hair_color"
+      ]
+    },
+    {
+      "id": "hands",
+      "title": "tag_group:hands",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Ahands",
+      "parents": [
+        "gestures",
+        "posture",
+        "handwear"
+      ],
+      "children": [
+        "gestures",
+        "posture"
+      ]
+    },
+    {
+      "id": "handwear",
+      "title": "tag_group:handwear",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Ahandwear",
+      "parents": [
+        "accessories"
+      ],
+      "children": [
+        "artistic_license",
+        "hands",
+        "attire"
+      ]
+    },
+    {
+      "id": "headwear",
+      "title": "tag_group:headwear",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Aheadwear",
+      "parents": [
+        "accessories",
+        "attire"
+      ],
+      "children": [
+        "attire",
+        "eyewear"
+      ]
+    },
+    {
+      "id": "holidays_and_celebrations",
+      "title": "tag_group:holidays_and_celebrations",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Aholidays_and_celebrations",
+      "parents": [],
+      "children": []
+    },
+    {
+      "id": "image_composition",
+      "title": "tag_group:image_composition",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Aimage_composition",
+      "parents": [
+        "colors",
+        "lighting",
+        "patterns"
+      ],
+      "children": [
+        "focus_tags",
+        "lighting",
+        "prints",
+        "censorship",
+        "backgrounds",
+        "colors",
+        "drawing_software",
+        "visual_aesthetic"
+      ]
+    },
+    {
+      "id": "japanese_dialects",
+      "title": "tag_group:japanese_dialects",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Ajapanese_dialects",
+      "parents": [
+        "text"
+      ],
+      "children": []
+    },
+    {
+      "id": "jobs",
+      "title": "tag_group:jobs",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Ajobs",
+      "parents": [],
+      "children": []
+    },
+    {
+      "id": "legendary_creatures",
+      "title": "tag_group:legendary_creatures",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Alegendary_creatures",
+      "parents": [],
+      "children": []
+    },
+    {
+      "id": "legwear",
+      "title": "tag_group:legwear",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Alegwear",
+      "parents": [
+        "accessories",
+        "attire"
+      ],
+      "children": [
+        "attire"
+      ]
+    },
+    {
+      "id": "lighting",
+      "title": "tag_group:lighting",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Alighting",
+      "parents": [
+        "image_composition"
+      ],
+      "children": [
+        "image_composition"
+      ]
+    },
+    {
+      "id": "locations",
+      "title": "tag_group:locations",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Alocations",
+      "parents": [
+        "real_world_locations"
+      ],
+      "children": [
+        "real_world_locations"
+      ]
+    },
+    {
+      "id": "mask",
+      "title": "tag_group:mask",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Amask",
+      "parents": [],
+      "children": []
+    },
+    {
+      "id": "metatags",
+      "title": "tag_group:metatags",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Ametatags",
+      "parents": [
+        "scan"
+      ],
+      "children": [
+        "drawing_software"
+      ]
+    },
+    {
+      "id": "neck_and_neckwear",
+      "title": "tag_group:neck_and_neckwear",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Aneck_and_neckwear",
+      "parents": [
+        "accessories",
+        "attire"
+      ],
+      "children": []
+    },
+    {
+      "id": "nudity",
+      "title": "tag_group:nudity",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Anudity",
+      "parents": [
+        "breasts_tags",
+        "attire",
+        "sexual_attire"
+      ],
+      "children": []
+    },
+    {
+      "id": "panties",
+      "title": "tag_group:panties",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Apanties",
+      "parents": [
+        "pussy",
+        "attire",
+        "sexual_attire",
+        "bra"
+      ],
+      "children": [
+        "attire",
+        "bra",
+        "sexual_attire"
+      ]
+    },
+    {
+      "id": "patterns",
+      "title": "tag_group:patterns",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Apatterns",
+      "parents": [
+        "prints"
+      ],
+      "children": [
+        "prints",
+        "image_composition",
+        "symbols"
+      ]
+    },
+    {
+      "id": "penis",
+      "title": "tag_group:penis",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Apenis",
+      "parents": [
+        "body_parts"
+      ],
+      "children": [
+        "body_parts"
+      ]
+    },
+    {
+      "id": "people",
+      "title": "tag_group:people",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Apeople",
+      "parents": [],
+      "children": []
+    },
+    {
+      "id": "phrases",
+      "title": "tag_group:phrases",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Aphrases",
+      "parents": [
+        "text"
+      ],
+      "children": [
+        "text"
+      ]
+    },
+    {
+      "id": "piercings",
+      "title": "tag_group:piercings",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Apiercings",
+      "parents": [
+        "accessories",
+        "attire",
+        "sex_objects"
+      ],
+      "children": [
+        "attire",
+        "sex_objects"
+      ]
+    },
+    {
+      "id": "pixiv_projects",
+      "title": "tag_group:pixiv_projects",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Apixiv_projects",
+      "parents": [],
+      "children": []
+    },
+    {
+      "id": "platform_games",
+      "title": "tag_group:platform_games",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Aplatform_games",
+      "parents": [
+        "video_game"
+      ],
+      "children": [
+        "shooter_games"
+      ]
+    },
+    {
+      "id": "posture",
+      "title": "tag_group:posture",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Aposture",
+      "parents": [
+        "body_parts",
+        "hands",
+        "gestures",
+        "sexual_positions"
+      ],
+      "children": [
+        "eyes_tags",
+        "gestures",
+        "hands",
+        "sexual_positions"
+      ]
+    },
+    {
+      "id": "prints",
+      "title": "tag_group:prints",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Aprints",
+      "parents": [
+        "image_composition",
+        "colors",
+        "patterns"
+      ],
+      "children": [
+        "colors",
+        "patterns",
+        "symbols"
+      ]
+    },
+    {
+      "id": "pussy",
+      "title": "tag_group:pussy",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Apussy",
+      "parents": [
+        "body_parts",
+        "ass"
+      ],
+      "children": [
+        "sex_acts",
+        "sex_objects",
+        "sexual_attire",
+        "panties",
+        "ass"
+      ]
+    },
+    {
+      "id": "real_world_locations",
+      "title": "tag_group:real_world_locations",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Areal_world_locations",
+      "parents": [
+        "locations"
+      ],
+      "children": [
+        "locations"
+      ]
+    },
+    {
+      "id": "role-playing_games",
+      "title": "tag_group:role-playing_games",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Arole-playing_games",
+      "parents": [
+        "video_game"
+      ],
+      "children": []
+    },
+    {
+      "id": "scan",
+      "title": "tag_group:scan",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Ascan",
+      "parents": [],
+      "children": [
+        "metatags"
+      ]
+    },
+    {
+      "id": "sex_acts",
+      "title": "tag_group:sex_acts",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Asex_acts",
+      "parents": [
+        "pussy",
+        "sexual_attire",
+        "sexual_positions",
+        "sex_objects",
+        "groups"
+      ],
+      "children": [
+        "breasts_tags",
+        "sexual_attire",
+        "sex_objects",
+        "sexual_positions"
+      ]
+    },
+    {
+      "id": "sex_objects",
+      "title": "tag_group:sex_objects",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Asex_objects",
+      "parents": [
+        "pussy",
+        "sexual_attire",
+        "sex_acts",
+        "sexual_positions",
+        "piercings"
+      ],
+      "children": [
+        "piercings",
+        "sex_acts",
+        "sexual_attire"
+      ]
+    },
+    {
+      "id": "sexual_attire",
+      "title": "tag_group:sexual_attire",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Asexual_attire",
+      "parents": [
+        "breasts_tags",
+        "pussy",
+        "attire",
+        "bra",
+        "panties",
+        "sex_acts",
+        "sexual_positions",
+        "sex_objects"
+      ],
+      "children": [
+        "bra",
+        "panties",
+        "attire",
+        "nudity",
+        "sex_objects",
+        "sex_acts"
+      ]
+    },
+    {
+      "id": "sexual_positions",
+      "title": "tag_group:sexual_positions",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Asexual_positions",
+      "parents": [
+        "body_parts",
+        "posture",
+        "sex_acts",
+        "groups"
+      ],
+      "children": [
+        "posture",
+        "sex_acts",
+        "sexual_attire",
+        "sex_objects"
+      ]
+    },
+    {
+      "id": "shooter_games",
+      "title": "tag_group:shooter_games",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Ashooter_games",
+      "parents": [
+        "video_game",
+        "platform_games"
+      ],
+      "children": []
+    },
+    {
+      "id": "shoulders",
+      "title": "tag_group:shoulders",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Ashoulders",
+      "parents": [
+        "body_parts"
+      ],
+      "children": [
+        "body_parts"
+      ]
+    },
+    {
+      "id": "simulated_sex_acts",
+      "title": "tag_group:simulated_sex_acts",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Asimulated_sex_acts",
+      "parents": [],
+      "children": []
+    },
+    {
+      "id": "skin_color",
+      "title": "tag_group:skin_color",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Askin_color",
+      "parents": [
+        "colors",
+        "body_parts"
+      ],
+      "children": [
+        "colors",
+        "hair_color"
+      ]
+    },
+    {
+      "id": "sleeves",
+      "title": "tag_group:sleeves",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Asleeves",
+      "parents": [
+        "attire"
+      ],
+      "children": [
+        "attire",
+        "dress"
+      ]
+    },
+    {
+      "id": "sports",
+      "title": "tag_group:sports",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Asports",
+      "parents": [
+        "companies_and_brand_names"
+      ],
+      "children": []
+    },
+    {
+      "id": "subjective",
+      "title": "tag_group:subjective",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Asubjective",
+      "parents": [],
+      "children": []
+    },
+    {
+      "id": "symbols",
+      "title": "tag_group:symbols",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Asymbols",
+      "parents": [
+        "prints",
+        "patterns",
+        "text"
+      ],
+      "children": [
+        "text",
+        "year_tags"
+      ]
+    },
+    {
+      "id": "tail",
+      "title": "tag_group:tail",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Atail",
+      "parents": [
+        "body_parts"
+      ],
+      "children": [
+        "hair_styles"
+      ]
+    },
+    {
+      "id": "technology",
+      "title": "tag_group:technology",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Atechnology",
+      "parents": [],
+      "children": [
+        "attire",
+        "audio_tags"
+      ]
+    },
+    {
+      "id": "text",
+      "title": "tag_group:text",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Atext",
+      "parents": [
+        "symbols",
+        "phrases"
+      ],
+      "children": [
+        "year_tags",
+        "phrases",
+        "japanese_dialects",
+        "symbols"
+      ]
+    },
+    {
+      "id": "verbs_and_gerunds",
+      "title": "tag_group:verbs_and_gerunds",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Averbs_and_gerunds",
+      "parents": [],
+      "children": []
+    },
+    {
+      "id": "video_game",
+      "title": "tag_group:video_game",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Avideo_game",
+      "parents": [],
+      "children": [
+        "fighting_games",
+        "platform_games",
+        "role-playing_games",
+        "shooter_games",
+        "visual_novel_games"
+      ]
+    },
+    {
+      "id": "visual_aesthetic",
+      "title": "tag_group:visual_aesthetic",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Avisual_aesthetic",
+      "parents": [
+        "image_composition",
+        "fashion_style"
+      ],
+      "children": [
+        "fashion_style"
+      ]
+    },
+    {
+      "id": "visual_novel_games",
+      "title": "tag_group:visual_novel_games",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Avisual_novel_games",
+      "parents": [
+        "video_game"
+      ],
+      "children": []
+    },
+    {
+      "id": "water",
+      "title": "tag_group:water",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Awater",
+      "parents": [],
+      "children": []
+    },
+    {
+      "id": "wings",
+      "title": "tag_group:wings",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Awings",
+      "parents": [
+        "body_parts"
+      ],
+      "children": []
+    },
+    {
+      "id": "year_tags",
+      "title": "tag_group:year_tags",
+      "url": "https://danbooru.donmai.us/wiki_pages/tag_group%3Ayear_tags",
+      "parents": [
+        "symbols",
+        "text"
+      ],
+      "children": []
+    }
+  ]
+}

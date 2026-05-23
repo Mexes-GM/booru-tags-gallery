@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="manifest" href="/manifest.json" />
+  <!-- Viewport: removed maximum-scale and user-scalable to avoid accessibility warnings -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Booru Tags" />
+    <link rel="apple-touch-icon" href="/favicon.png" />
+    <link rel="apple-touch-startup-image" href="/favicon.png" />
+  <!-- theme-color (not supported in all desktop browsers, but harmless) -->
+  <meta name="theme-color" content="#2563eb" />
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#1e40af" />
+  <meta name="msapplication-TileColor" content="#2563eb" />
+  <meta name="msapplication-config" content="/browserconfig.xml" />
+  <title>Booru Tag Gallery by Mexes</title>
+  <meta name="description" content="Search and quickly discover the tag you need for your image generation." />
+    <meta name="keywords" content="danbooru,tags,explorer,booru,wiki,anime,art,tags search,fuzzy search,artists,posts gallery" />
+    <meta name="author" content="Mexes" />
+    <meta name="robots" content="index,follow" />
+    <meta name="generator" content="Vite + React" />
+  <!-- Canonical eliminado para evitar fijar dominio (Netlify/Vercel); el buscador usará la URL accedida -->
+  <!-- <link rel="canonical" href="..." /> -->
+    <!-- Minimal Open Graph (solo lo necesario para una preview pequeña en Discord) -->
+    <meta property="og:title" content="Danbooru Tag Explorer" />
+  <meta property="og:description" content="Browse Danbooru tags with fuzzy search, alias resolver, wiki pages, examples and related posts." />
+  <meta property="og:image" content="/favicon.png" />
+  <meta property="og:image:width" content="64" />
+  <meta property="og:image:height" content="64" />
+    <!-- Preconnect optimizations -->
+    <link rel="preconnect" href="https://danbooru.donmai.us" crossorigin />
+    <link rel="dns-prefetch" href="https://danbooru.donmai.us" />
+    <!-- Structured Data -->
+    <script type="application/ld+json">{
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Danbooru Tag Explorer",
+      "url": "https://danbooru-tags-explorer.netlify.app/",
+  "description": "Explore over 93,000 Danbooru tags with instant search, wiki and visual examples.",
+  "inLanguage": "en",
+      "author": {"@type": "Person","name": "Mexes"},
+      "potentialAction": {"@type": "SearchAction","target": "https://danbooru-tags-explorer.netlify.app/?q={search_term}","query-input": "required name=search_term"}
+    }</script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

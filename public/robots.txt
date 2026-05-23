@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://danbooru-tags-explorer.netlify.app/sitemap.xml

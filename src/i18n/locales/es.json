@@ -1,0 +1,199 @@
+{
+  "common": {
+    "loading": "Cargando...",
+    "initializing": "Inicializando...",
+    "loadingTags": "Cargando base de datos de tags...",
+    "error": "Error",
+    "retry": "Reintentar",
+    "close": "Cerrar",
+    "back": "Atrás",
+    "next": "Siguiente",
+    "previous": "Anterior",
+    "search": "Buscar",
+    "clear": "Limpiar",
+    "all": "Todos",
+    "none": "Ninguno",
+    "yes": "Sí",
+    "no": "No",
+    "cancel": "Cancelar",
+    "save": "Guardar",
+    "edit": "Editar",
+    "delete": "Eliminar",
+    "view": "Ver",
+    "more": "Más",
+    "less": "Menos"
+  },
+  "navigation": {
+    "home": "Inicio",
+    "tags": "Tags",
+    "search": "Búsqueda",
+    "settings": "Configuración",
+    "language": "Idioma"
+  },
+  "search": {
+    "placeholder": "Buscar tags...",
+    "noResults": "Sin resultados para \"{{query}}\"",
+    "resultsCount": "{{count}} resultado{{plural}} para \"{{query}}\"",
+    "updatingResults": "Actualizando resultados...",
+    "suggestions": "Sugerencias",
+    "synonyms": "Se encontraron sinónimos: {{synonyms}}",
+    "trySynonyms": "💡 Intenta buscar con los sinónimos sugeridos arriba",
+    "tryGeneral": "💡 Intenta con términos más generales o verifica la ortografía",
+    "searchingSuggestions": "Buscando sugerencias...",
+    "noSuggestionsFound": "No se encontraron sugerencias",
+    "clear": "Limpiar búsqueda",
+    "loadingWorker": "Cargando motor de búsqueda...",
+  "autoTranslate": "Traducir Entrada",
+  "aliasResolver": "Resolver Alias",
+    "didYouMean": "¿Quisiste decir?",
+    "closeSuggestion": "Cerrar sugerencia",
+    "inputLanguage": "Idioma de Entrada",
+    "loadingLanguages": "Cargando idiomas...",
+    "languageAuto": "Automático",
+    "searching": "Buscando:",
+    "in": "en",
+    "results": "resultados",
+  "result": "resultado",
+    "loading": "cargando…",
+    "translating": "Traduciendo…",
+    "translationOf": "Traducción de",
+    "aliasResolved": "Alias resuelto",
+    "categories": {
+      "all": "Todas",
+      "general": "General",
+      "artist": "Artista",
+      "copyright": "Copyright",
+      "character": "Personaje",
+      "meta": "Meta",
+      "tagGroups": "Tag groups"
+    },
+    "startTyping": "Comienza a escribir para buscar tags...",
+    "exploreTags": "Explorar tags",
+  "tooltips": {
+      "aliasResolver": "Si está activo, los alias que escribes se convierten automáticamente al nombre canónico antes de buscar.",
+      "autoTranslate": "Traduce lo que escribes desde el idioma seleccionado al inglés.",
+      "inputLanguage": "Selecciona el idioma en el que vas a escribir para obtener traducciones más precisas.",
+      "category": "Filtra resultados por la categoría de tags {{category}}."
+  },
+  "enableAutoTranslateFirst": "Activa la traducción automática para cambiar el idioma"
+  },
+  "tags": {
+    "postCount": "{{count}} posts",
+    "category": "Categoría",
+    "aliases": "Aliases",
+    "related": "Tags relacionados",
+    "wiki": "Wiki",
+    "posts": "Posts",
+    "examples": "Ejemplos",
+    "noWiki": "No hay información de wiki disponible",
+    "noPosts": "No hay posts disponibles",
+    "noExamples": "No hay ejemplos disponibles",
+    "viewOnDanbooru": "Ver en Danbooru",
+    "editOnDanbooru": "Editar en Danbooru"
+  },
+  "tag": {
+    "wikiInformation": "Información de Wiki",
+    "relatedPosts": "Posts Relacionados"
+  },
+  "nsfw": {
+    "filter": "Filtro NSFW",
+    "enabled": "Habilitado",
+    "disabled": "Deshabilitado",
+    "blocked": "Contenido bloqueado por filtro NSFW",
+    "blockedDescription": "Este contenido ha sido bloqueado por el filtro de contenido sensible. Puedes deshabilitar el filtro en la configuración para ver este contenido.",
+    "toggleFilter": "Alternar filtro NSFW"
+  },
+  "homepage": {
+    "title": "Booru Tag Gallery",
+    "description": "Navega eficientemente entre miles de tags y publicaciones para descubrir y encontrar los elementos perfectos que potencien tu generación de imágenes con IA",
+    "subtitle": "Explora más de 93,000 tags con búsqueda instantánea",
+    "welcome": "Bienvenido al Explorador de Tags",
+    "startSearching": "Comienza a buscar tags para explorar la base de datos",
+    "popularTags": "Tags Populares",
+    "recentSearches": "Búsquedas Recientes",
+    "clearSearch": "Limpiar búsqueda",
+    "loadMore": "Cargar más",
+    "noMoreResults": "No hay más resultados",
+    "loadingMoreTags": "Cargando más tags...",
+    "allTagsSeen": "Has visto todos los tags populares en esta categoría",
+    "rateLimitTitle": "Límite de velocidad alcanzado",
+    "rateLimitDescription": "La API de Danbooru ha limitado las solicitudes para proteger el servidor.",
+    "rateLimitReset": "Se reinicia en ~{{minutes}} minutos",
+    "lowRateLimit": "Pocas solicitudes restantes ({{remaining}}/{{limit}})"
+  },
+  "modal": {
+    "close": "Cerrar modal",
+    "loading": "Cargando información...",
+    "error": "Error al cargar información"
+  },
+  "errors": {
+    "network": "Error de conexión",
+    "timeout": "Tiempo de espera agotado",
+    "notFound": "No encontrado",
+    "serverError": "Error del servidor",
+    "unknown": "Error desconocido",
+  "retryMessage": "Intenta de nuevo en unos momentos",
+  "wikiLoadFailed": "No se pudo cargar la información del wiki.",
+  "galleryLoadFailed": "No se pudo cargar la galería de imágenes."
+  },
+  "settings": {
+    "title": "Configuración",
+    "appearance": "Apariencia",
+    "darkMode": "Modo Oscuro",
+    "language": "Idioma",
+    "nsfwFilter": "Filtro NSFW",
+    "nsfwFilterDescription": "Oculta contenido sensible automáticamente",
+    "theme": "Tema",
+    "themeLight": "Claro",
+    "themeDark": "Oscuro",
+    "themeAuto": "Automático",
+    "performance": "Rendimiento",
+    "imageQuality": "Calidad de imagen",
+    "imageQualityHigh": "Alta",
+    "imageQualityMedium": "Media",
+    "imageQualityLow": "Baja"
+  },
+  "footer": {
+    "poweredBy": "Desarrollado con",
+    "danbooru": "Danbooru",
+    "api": "API",
+    "github": "Código fuente"
+  },
+  "ui": {
+  "tagGroup": "Grupo de etiquetas",
+  "noDescription": "Sin descripción",
+  "moreOfMyWorkHere": "Más de mi trabajo aquí",
+  "copyAllTags": "Copiar todos los tags",
+  "copy": "Copiar",
+  "scrollToTop": "Volver al inicio",
+  "visitOn": "Visitar {{name}} en {{platform}}",
+  "supportOnKofi": "Apóyame en Ko-fi",
+  "tagButtonTooltip": "Click: abrir tag | Click derecho / Long press: copiar \"{{tag}}\""
+  },
+  "post": "Post #",
+  "nsfwImage": "Imagen NSFW",
+  "nsfwContentBlocked": "Contenido bloqueado por filtro NSFW",
+  "spoilerHoverToSee": "Spoiler - hover para ver",
+  "translationNote": "Nota de traducción: ",
+  "tooltips": {
+    "rightClickCopy": "Click derecho: copiar",
+    "rightClickCopyCategory": "Click derecho: copiar categoría",
+    "rightClickCopyRemaining": "Click derecho: copiar restantes",
+    "rightClickCopyTag": "Click derecho: copiar tag",
+    "rightClickLongPressCopy": "Click derecho / Long press: copiar",
+    "rightClickLongPressCopyCategory": "Click derecho / Long press: copiar categoría",
+    "rightClickLongPressCopyRemaining": "Click derecho / Long press: copiar restantes"
+  },
+  "errorMessages": {
+    "nsfwFilterProvider": "useNSFWFilter debe usarse dentro de NSFWFilterProvider"
+  },
+  "gallery": {
+    "noPosts": "No hay posts disponibles",
+    "noPostsDescription": "No se encontraron post para este tag"
+  }
+  ,
+  "clipboard": {
+    "copySuccess": "Texto copiado",
+    "copyFail": "Fallo al copiar"
+  }
+}

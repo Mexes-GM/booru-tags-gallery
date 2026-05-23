@@ -1,0 +1,143 @@
+/* Optimizaciones para evitar parpadeo de imágenes */
+
+/* Contenedor de imagen optimizado */
+.image-container {
+  position: relative;
+  overflow: hidden;
+  background: transparent;
+}
+
+/* Contenedor de imagen con fallback sutil */
+.image-container::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  /* Mix entre fondo y surface-alt para un esqueleto suave */
+  background: linear-gradient(135deg,
+    color-mix(in srgb, var(--color-surface-alt) 65%, var(--color-bg)) 0%,
+    color-mix(in srgb, var(--color-surface) 85%, var(--color-bg)) 100%);
+  opacity: 0.30;
+  z-index: -1;
+}
+
+/* Imagen optimizada */
+.optimized-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+  will-change: transform, opacity;
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+/* Estado de carga */
+.image-loading {
+  opacity: 0;
+  transform: scale(0.95);
+}
+
+/* Estado cargado */
+.image-loaded {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Contenedor de carga mejorado */
+.loading-container {
+  background: rgba(255, 255, 255, 0.7);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* Animación de carga suave */
+.loading-fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Animación de deslizamiento */
+.image-sliding {
+  transition: none !important;
+  will-change: transform;
+}
+
+/* Preload de imágenes */
+.image-preload {
+  position: absolute;
+  top: -9999px;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Optimizaciones para Tailwind CSS v4 */
+@layer utilities {
+  .image-render-optimized {
+    image-rendering: -webkit-optimize-contrast; /* Edge/Chrome */
+    image-rendering: crisp-edges; /* Firefox */
+    image-rendering: pixelated; /* Fallback */
+  }
+  
+  .gpu-accelerated {
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+  }
+  
+  .smooth-transition {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
+
+/* Media queries para diferentes tamaños de pantalla */
+@media (max-width: 640px) {
+  .optimized-image {
+    transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
+  }
+}
+
+@media (min-width: 1024px) {
+  .optimized-image {
+    transition: opacity 0.4s ease-in-out, transform 0.4s ease-in-out;
+  }
+}
+
+/* Optimizaciones para modo oscuro */
+@media (prefers-color-scheme: dark) {
+  .image-container::before {
+    background: linear-gradient(135deg,
+      color-mix(in srgb, var(--color-surface-alt) 55%, var(--color-bg)) 0%,
+      color-mix(in srgb, var(--color-elevated) 80%, var(--color-bg)) 100%);
+    opacity: 0.22;
+  }
+}
+
+/* Optimizaciones para dispositivos de alta densidad */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .optimized-image {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  image-rendering: pixelated;
+  }
+} 
