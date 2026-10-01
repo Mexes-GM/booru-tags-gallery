@@ -8,3 +8,6 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
+
+/** True only when the bundle was built on Vercel (see vite.config.ts define). */
+declare const __ON_VERCEL__: boolean;
