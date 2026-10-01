@@ -47,27 +47,121 @@ interface UseTagSearchReturn {
 
 
 
-// Module-level flag survives React StrictMode double-mount in dev
-let _workerInitStarted = false;
+// Worker readiness survives remounts (e.g. navigating Home -> Tag -> Home)
+let _workerReady = false;
+let _totalTags = 0;
 
-const useTagSearch = (): UseTagSearchReturn => {
-  const [searchTerm, setSearchTerm] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState('all')
+// --- Serverless backend (translation / languages) ---------------------------
+// The site deploys to Vercel (/api/*) and Netlify (/.netlify/functions/*).
+// Hostname sniffing broke on custom domains, so try /api first, fall back to
+// the Netlify path, and remember whichever answered for the rest of the session.
+const SERVERLESS_BASES = ['/api', '/.netlify/functions'];
+const SERVERLESS_BASE_KEY = 'serverlessBase';
+let resolvedServerlessBase: string | null = (() => {
+  try {
+    const saved = sessionStorage.getItem(SERVERLESS_BASE_KEY);
+    return saved && SERVERLESS_BASES.includes(saved) ? saved : null;
+  } catch {
+    return null;
+  }
+})();
+
+/** A real function answered (not a 404 page or the SPA's index.html fallback). */
+const isFunctionResponse = (res: Response) =>
+  res.status !== 404 && (res.headers.get('content-type') || '').includes('application/json');
+
+// Module-level promises so the language lists are fetched at most once per page load,
+// no matter how many effects / hook instances (or StrictMode double-invocations) ask for them.
+let staticLanguagesPromise: Promise<DeepLLanguage[]> | null = null;
+function loadStaticLanguages(): Promise<DeepLLanguage[]> {
+  if (!staticLanguagesPromise) {
+    staticLanguagesPromise = fetch('/data/deepl-languages.json', { cache: 'force-cache' })
+      .then(res => (res.ok ? (res.json() as Promise<DeepLLanguage[]>) : []))
+      .then(list => list.filter(l => l.language !== 'EN'))
+      .catch(() => {
+        staticLanguagesPromise = null; // allow a retry later
+        return [];
+      });
+  }
+  return staticLanguagesPromise;
+}
+
+let remoteLanguagesPromise: Promise<DeepLLanguage[]> | null = null;
+function loadRemoteLanguages(): Promise<DeepLLanguage[]> {
+  if (!remoteLanguagesPromise) {
+    remoteLanguagesPromise = (async () => {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 6000);
+      try {
+        const response = await fetchServerless('/languages?type=source', { signal: controller.signal });
+        if (!response.ok) return [];
+        const data = await response.json() as { success?: boolean; data?: DeepLLanguage[] };
+        return data.success && Array.isArray(data.data) ? data.data.filter(l => l.language !== 'EN') : [];
+      } finally {
+        clearTimeout(timeout);
+      }
+    })().catch(() => {
+      remoteLanguagesPromise = null; // allow a retry later
+      return [];
+    });
+  }
+  return remoteLanguagesPromise;
+}
+
+export async function fetchServerless(path: string, init?: RequestInit): Promise<Response> {
+  const order = resolvedServerlessBase
+    ? [resolvedServerlessBase, ...SERVERLESS_BASES.filter(b => b !== resolvedServerlessBase)]
+    : SERVERLESS_BASES;
+  let lastResponse: Response | null = null;
+  let lastError: unknown = null;
+  for (const base of order) {
+    try {
+      const res = await fetch(`${base}${path}`, init);
+      if (isFunctionResponse(res)) {
+        if (resolvedServerlessBase !== base) {
+          resolvedServerlessBase = base;
+          try { sessionStorage.setItem(SERVERLESS_BASE_KEY, base); } catch { /* storage unavailable */ }
+        }
+        return res;
+      }
+      lastResponse = res;
+    } catch (error) {
+      if (init?.signal?.aborted) throw error;
+      lastError = error; // network error: try the next backend
+    }
+  }
+  if (lastResponse) return lastResponse;
+  throw lastError instanceof Error ? lastError : new Error('No serverless backend available');
+}
+
+export interface UseTagSearchOptions {
+  /** Initial search term (e.g. from the ?q= URL parameter). */
+  initialTerm?: string;
+  /** Initial category (e.g. from the ?cat= URL parameter). */
+  initialCategory?: string;
+}
+
+const useTagSearch = (options: UseTagSearchOptions = {}): UseTagSearchReturn => {
+  const [searchTerm, setSearchTerm] = useState(options.initialTerm ?? '')
+  const [selectedCategory, setSelectedCategory] = useState(options.initialCategory ?? 'all')
   const [searchResults, setSearchResults] = useState<LocalTagData[]>([])
+  // Latest result count, read by the search effect without making it re-run whenever results change
+  const searchResultsLengthRef = useRef(0)
+  searchResultsLengthRef.current = searchResults.length
   const [suggestions, setSuggestions] = useState<LocalTagData[]>([])
   const [synonymSuggestions, setSynonymSuggestions] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isSuggestionsLoading, setIsSuggestionsLoading] = useState(false)
   const [isTransitioning] = useState(false)
-  const [isWorkerReady, setIsWorkerReady] = useState(false)
-  const [isWorkerInitializing, setIsWorkerInitializing] = useState(true)
+  const [isWorkerReady, setIsWorkerReady] = useState(_workerReady)
+  const [isWorkerInitializing, setIsWorkerInitializing] = useState(!_workerReady)
   const [hasSearched, setHasSearched] = useState(false)
   const [isTranslating, setIsTranslating] = useState(false);
   const [lastTranslatedFor, setLastTranslatedFor] = useState<string>('');
   const [translatedTerm, setTranslatedTerm] = useState<string>('');
   const [resolvedCanonicalTerm, setResolvedCanonicalTerm] = useState<string>('');
   const [originalInputTerm, setOriginalInputTerm] = useState<string>('');
-  const [totalTags, setTotalTags] = useState<number>(0);
+  const [totalTags, setTotalTags] = useState<number>(_totalTags);
   const [aliasResolverEnabled, setAliasResolverEnabled] = useState<boolean>(() => {
     const saved = localStorage.getItem('aliasResolverEnabled');
     return saved !== null ? saved === 'true' : true; // por defecto activado
@@ -124,63 +218,61 @@ const useTagSearch = (): UseTagSearchReturn => {
     if (isLoadingLanguages || availableLanguages.length > 0) return;
     setIsLoadingLanguages(true);
     try {
-      const staticRes = await fetch('/data/deepl-languages.json', { cache: 'force-cache' });
-      if (staticRes.ok) {
-        const staticData: DeepLLanguage[] = await staticRes.json();
-        const filtered = staticData.filter(l => l.language !== 'EN');
-        setAvailableLanguages(filtered);
+      let current = availableLanguages;
+      const staticData = await loadStaticLanguages();
+      if (staticData.length > 0) {
+        current = staticData;
+        setAvailableLanguages(staticData);
       }
       if (!autoTranslateEnabled) return; // Lazy: solo si está habilitado
-      const already = new Set(availableLanguages.map(l => l.language));
+      const already = new Set(current.map(l => l.language));
       const needImportant = ['ES','JA','KO','ZH','FR','DE'];
       const missingImportant = needImportant.some(c => !already.has(c));
       if (!missingImportant) return;
-      const isVercel = typeof window !== 'undefined' && /vercel\.app$/i.test(window.location.hostname);
-      const serverlessBase = isVercel ? '/api' : '/.netlify/functions';
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 6000);
-      try {
-        const response = await fetch(`${serverlessBase}/languages?type=source`, { signal: controller.signal });
-        clearTimeout(timeout);
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success && Array.isArray(data.data)) {
-            const filteredLanguages = data.data.filter((lang: any) => lang.language !== 'EN');
-            const mergedMap: Record<string, DeepLLanguage> = {};
-            [...filteredLanguages, ...availableLanguages].forEach(l => { mergedMap[l.language] = l; });
-            setAvailableLanguages(Object.values(mergedMap));
-          }
-        }
-      } catch {/* silencioso */}
+      const remoteLanguages = await loadRemoteLanguages();
+      if (remoteLanguages.length > 0) {
+        const mergedMap: Record<string, DeepLLanguage> = {};
+        [...remoteLanguages, ...current].forEach(l => { mergedMap[l.language] = l; });
+        setAvailableLanguages(Object.values(mergedMap));
+      }
     } finally {
       setIsLoadingLanguages(false);
     }
   }, [autoTranslateEnabled, availableLanguages, isLoadingLanguages]);
 
-  // Prevent duplicate init across StrictMode double-mount in dev
+  // Wait for the worker dataset. The worker queues every command until
+  // tags.json is loaded, so INIT resolves exactly when searches can run.
   useEffect(() => {
-    if (_workerInitStarted) return;
-    _workerInitStarted = true;
     let cancelled = false;
 
     const initWorker = async (attempt = 0) => {
       if (cancelled) return;
+      if (_workerReady) {
+        setTotalTags(_totalTags);
+        setIsWorkerReady(true);
+        setIsWorkerInitializing(false);
+        return;
+      }
       try {
         await tagSearchWorker.postMessage('INIT');
-        await new Promise(resolve => setTimeout(resolve, 2000));
         const stats = await tagSearchWorker.postMessage('GET_STATS') as { total: number; categories: Record<string, number> };
-        if (stats) {
+        if (stats && typeof stats.total === 'number') {
+          _workerReady = true;
+          _totalTags = stats.total;
+          if (cancelled) return;
           setTotalTags(stats.total);
           setIsWorkerReady(true);
-        } else if (attempt < 5) {
-          setTimeout(() => initWorker(attempt + 1), 1500);
+          setIsWorkerInitializing(false);
+          return;
         }
+        throw new Error('Invalid worker stats');
       } catch {
+        if (cancelled) return;
         if (attempt < 5) {
-          setTimeout(() => initWorker(attempt + 1), 2000 + attempt * 500);
+          setTimeout(() => initWorker(attempt + 1), 1000 + attempt * 500);
+        } else {
+          setIsWorkerInitializing(false);
         }
-      } finally {
-        if (!cancelled) setIsWorkerInitializing(false);
       }
     };
 
@@ -239,25 +331,23 @@ const useTagSearch = (): UseTagSearchReturn => {
     }
 
     // Mapa global en módulo para colapsar solicitudes (adjunto a window para reutilización entre hooks si existiera)
-    const globalAny: any = (typeof window !== 'undefined') ? window : {};
-    if (!globalAny.__inFlightTranslations) globalAny.__inFlightTranslations = new Map<string, Promise<string>>();
+    const globalAny = ((typeof window !== 'undefined') ? window : {}) as { __inFlightTranslations?: Map<string, Promise<string>> };
+    const inFlight = (globalAny.__inFlightTranslations ??= new Map<string, Promise<string>>());
     const key = `${inputLanguage || 'auto'}::${trimmed}`;
-    if (globalAny.__inFlightTranslations.has(key)) {
-      return globalAny.__inFlightTranslations.get(key)!; // reutiliza la misma promesa
+    if (inFlight.has(key)) {
+      return inFlight.get(key)!; // reutiliza la misma promesa
     }
 
     setIsTranslating(true);
   // Removed requesting translation log
     try {
-      const payload: any = { text: trimmed, target_lang: 'EN' };
+      const payload: { text: string; target_lang: string; source_lang?: string } = { text: trimmed, target_lang: 'EN' };
       // Set source_lang if not auto
       if (inputLanguage !== 'auto') {
         payload.source_lang = inputLanguage;
       }
 
-  const isVercel = typeof window !== 'undefined' && /vercel\.app$/i.test(window.location.hostname);
-  const serverlessBase = isVercel ? '/api' : '/.netlify/functions';
-      const doFetch = () => fetch(`${serverlessBase}/translate`, {
+      const doFetch = () => fetchServerless('/translate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -282,12 +372,12 @@ const useTagSearch = (): UseTagSearchReturn => {
         }
         return t;
       })();
-      globalAny.__inFlightTranslations.set(key, p);
+      inFlight.set(key, p);
       const t = await p.finally(() => {
-        globalAny.__inFlightTranslations.delete(key);
+        inFlight.delete(key);
       });
       return t;
-  } catch (e) {
+  } catch {
       return trimmed;
     } finally {
       setIsTranslating(false);
@@ -320,7 +410,7 @@ const useTagSearch = (): UseTagSearchReturn => {
       }
       
       return results || [];
-  } catch (error) {
+  } catch {
       return [];
     }
   }, [isWorkerReady]);
@@ -352,13 +442,78 @@ const useTagSearch = (): UseTagSearchReturn => {
       }
       
       return results || [];
-  } catch (error) {
+  } catch {
       return [];
     }
   }, [isWorkerReady]);
 
 
 
+  
+  const findExactTag = useCallback(async (tagName: string): Promise<LocalTagData | undefined> => {
+    try {
+      const results = await searchTags(tagName, 'all', 1);
+      return results.find(tag => tag.name.toLowerCase() === tagName.toLowerCase());
+    } catch {
+      // Silently handle exact tag search error
+      return undefined;
+    }
+  }, [searchTags]);
+
+  const getRealSynonyms = useCallback(async (term: string): Promise<string[]> => {
+    try {
+      if (!isWorkerReady || !term.trim()) return [];
+      // Usando función normalize del utilitario común
+      const q = normalize(term);
+      // Buscar el tag exacto por nombre normalizado
+      const exactTag = await findExactTag(term.replace(/\s+/g, '_'));
+      if (exactTag) {
+        return [];
+      }
+      try {
+        const aliasResult = await tagSearchWorker.postMessage<{name: string, aliases: string[]}>('GET_SYNONYM', { term });
+        if (aliasResult) {
+          // Normalizados para comparación
+          const canonicalNormalized = normalize(aliasResult.name || '');
+          // Si el usuario ya escribió el nombre canónico, NO sugerir alias inverso (evita sugerir 'fuck' cuando ya es 'sex')
+          if (canonicalNormalized === q) {
+            return [];
+          }
+          // Usuario escribió un alias: sugerir únicamente el canónico primero y opcionalmente otros alias útiles
+          const out: string[] = [];
+          if (aliasResult.name) out.push(aliasResult.name);
+          if (aliasResult.aliases && aliasResult.aliases.length > 0) {
+            for (const a of aliasResult.aliases) {
+              const na = normalize(a);
+              // No incluir el alias que el usuario escribió ni duplicados ni el canónico repetido
+              if (na !== q && na !== canonicalNormalized && !out.includes(a)) {
+                out.push(a);
+              }
+              if (out.length >= 3) break;
+            }
+          }
+          return out.slice(0, 3);
+        }
+      } catch {
+        // Silently handle worker synonym error
+      }
+      const similarTags = await getSuggestions(term, 'all', 20);
+      const synonyms: string[] = [];
+      for (const tag of similarTags) {
+        if (tag.aliases && tag.aliases.some(alias => alias.replace(/\s+/g, '_').toLowerCase() === q)) {
+          synonyms.push(tag.name);
+          if (synonyms.length >= 3) break;
+        }
+      }
+      return synonyms;
+    } catch {
+      // Silently handle real synonyms error
+      return [];
+    }
+  }, [isWorkerReady, findExactTag, getSuggestions]);
+
+  // Suggestions (debounced). Declared after getRealSynonyms so it can list it as a dependency;
+  // both callbacks only change when isWorkerReady changes, so this does not add extra runs.
   useEffect(() => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
@@ -410,7 +565,7 @@ const useTagSearch = (): UseTagSearchReturn => {
             setSynonymSuggestions([]);
           }
         }
-      } catch (error) {
+      } catch {
         if (!abortControllerRef.current?.signal.aborted) {
           // Silently handle suggestions error
           setSuggestions([]);
@@ -439,74 +594,12 @@ const useTagSearch = (): UseTagSearchReturn => {
         abortControllerRef.current.abort();
       }
     };
-  }, [searchTerm, selectedCategory, isWorkerReady, lastTranslatedFor, translatedTerm]);
-  
-  const findExactTag = useCallback(async (tagName: string): Promise<LocalTagData | undefined> => {
-    try {
-      const results = await searchTags(tagName, 'all', 1);
-      return results.find(tag => tag.name.toLowerCase() === tagName.toLowerCase());
-    } catch (error) {
-      // Silently handle exact tag search error
-      return undefined;
-    }
-  }, [searchTags]);
-
-  const getRealSynonyms = useCallback(async (term: string): Promise<string[]> => {
-    try {
-      if (!isWorkerReady || !term.trim()) return [];
-      // Usando función normalize del utilitario común
-      const q = normalize(term);
-      // Buscar el tag exacto por nombre normalizado
-      const exactTag = await findExactTag(term.replace(/\s+/g, '_'));
-      if (exactTag) {
-        return [];
-      }
-      try {
-        const aliasResult = await tagSearchWorker.postMessage<{name: string, aliases: string[]}>('GET_SYNONYM', { term });
-        if (aliasResult) {
-          // Normalizados para comparación
-          const canonicalNormalized = normalize(aliasResult.name || '');
-          // Si el usuario ya escribió el nombre canónico, NO sugerir alias inverso (evita sugerir 'fuck' cuando ya es 'sex')
-          if (canonicalNormalized === q) {
-            return [];
-          }
-          // Usuario escribió un alias: sugerir únicamente el canónico primero y opcionalmente otros alias útiles
-          const out: string[] = [];
-          if (aliasResult.name) out.push(aliasResult.name);
-          if (aliasResult.aliases && aliasResult.aliases.length > 0) {
-            for (const a of aliasResult.aliases) {
-              const na = normalize(a);
-              // No incluir el alias que el usuario escribió ni duplicados ni el canónico repetido
-              if (na !== q && na !== canonicalNormalized && !out.includes(a)) {
-                out.push(a);
-              }
-              if (out.length >= 3) break;
-            }
-          }
-          return out.slice(0, 3);
-        }
-      } catch (error) {
-        // Silently handle worker synonym error
-      }
-      const similarTags = await getSuggestions(term, 'all', 20);
-      const synonyms: string[] = [];
-      for (const tag of similarTags) {
-        if (tag.aliases && tag.aliases.some(alias => alias.replace(/\s+/g, '_').toLowerCase() === q)) {
-          synonyms.push(tag.name);
-          if (synonyms.length >= 3) break;
-        }
-      }
-      return synonyms;
-    } catch (error) {
-      // Silently handle real synonyms error
-      return [];
-    }
-  }, [isWorkerReady, findExactTag, getSuggestions]);
+  }, [searchTerm, selectedCategory, isWorkerReady, lastTranslatedFor, translatedTerm, getSuggestions, getRealSynonyms]);
   
   const getRelatedTags = useCallback(async (term: string, limit = 5): Promise<LocalTagData[]> => {
     try {
       return await getSuggestions(term, 'all', limit);
-    } catch (error) {
+    } catch {
       // Silently handle related tags error
       return [];
     }
@@ -534,7 +627,7 @@ const useTagSearch = (): UseTagSearchReturn => {
       }
       
       return results || [];
-    } catch (error) {
+    } catch {
       // Silently handle popular tags error
       return [];
     }
@@ -544,7 +637,7 @@ const useTagSearch = (): UseTagSearchReturn => {
     try {
       const stats = await tagSearchWorker.postMessage<{categories: Record<string, number>}>('GET_STATS');
       return stats?.categories || {};
-    } catch (error) {
+    } catch {
       // Silently handle category stats error
       return {};
     }
@@ -568,7 +661,7 @@ const useTagSearch = (): UseTagSearchReturn => {
             selectedCategory
           );
           setSearchResults(popularResults);
-        } catch (error) {
+        } catch {
           // Silently handle popular tags loading error
           setSearchResults([]);
         } finally {
@@ -579,7 +672,7 @@ const useTagSearch = (): UseTagSearchReturn => {
       
       setHasSearched(true);
       
-      const shouldShowLoading = searchResults.length === 0;
+      const shouldShowLoading = searchResultsLengthRef.current === 0;
       if (shouldShowLoading) {
         setIsLoading(true);
       }
@@ -610,7 +703,7 @@ const useTagSearch = (): UseTagSearchReturn => {
             } else {
               setResolvedCanonicalTerm('');
             }
-          } catch (error) {
+          } catch {
             // Silently handle alias resolution error
             setResolvedCanonicalTerm('');
           }
@@ -630,7 +723,7 @@ const useTagSearch = (): UseTagSearchReturn => {
         );
         // Search completed
         setSearchResults(results);
-      } catch (error) {
+      } catch {
         // Silently handle search error
         setSearchResults([]);
       } finally {
@@ -715,10 +808,11 @@ const useTagSearch = (): UseTagSearchReturn => {
   // Pre-carga oportuna (bajo prioridad) tras idle para usuarios que quizá activen la función
   useEffect(() => {
     if ('requestIdleCallback' in window) {
-      (window as any).requestIdleCallback(() => fetchLanguages());
-    } else {
-      setTimeout(() => fetchLanguages(), 3000);
+      const id = window.requestIdleCallback(() => fetchLanguages());
+      return () => window.cancelIdleCallback(id);
     }
+    const id = setTimeout(() => fetchLanguages(), 3000);
+    return () => clearTimeout(id);
   }, [fetchLanguages]);
   
   return {

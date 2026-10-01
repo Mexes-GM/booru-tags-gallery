@@ -1,35 +1,88 @@
+# Single source of truth for Netlify config (public/_headers and public/_redirects were removed).
+# Keep headers in sync with vercel.json.
+
 [build]
   publish = "dist"
-  command = "npm run build:production"
+  command = "npm run build"
 
 [build.environment]
-  NODE_VERSION = "20"
-  NPM_FLAGS = "--production=false"
-  NODE_ENV = "production"
+  NODE_VERSION = "22"
 
 [functions]
   directory = "netlify/functions"
   node_bundler = "esbuild"
 
+# SPA fallback (existing files and functions are served first).
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
 
-# Deshabilitamos el procesamiento de Netlify para evitar conflictos con Vite
-[build.processing]
-  skip_processing = true
-
-# Headers de seguridad básicos
+# --- Security headers ---------------------------------------------------------
+# script-src hash = sha256 of the inline theme pre-paint script in index.html.
+# If that script changes, recompute the hash here AND in vercel.json.
 [[headers]]
   for = "/*"
   [headers.values]
-    # Eliminados X-Frame-Options y X-XSS-Protection (obsoletos)
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'sha256-fpderl7I40OkxPA7iOqPNVh4t563dwErVl5qvlXiKNk='; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' https: data: blob:; connect-src 'self' https://danbooru.donmai.us https://cdn.donmai.us; worker-src 'self' blob:; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests"
+    X-Frame-Options = "DENY"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
-    # Añadimos frame-ancestors a CSP para reemplazar X-Frame-Options
-    Content-Security-Policy = "default-src 'self'; frame-ancestors 'none'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://danbooru.donmai.us https://*.netlify.app; font-src 'self' data:;"
     Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
 
-# Netlify maneja automáticamente la compresión gzip/brotli
-# No necesitamos especificar Content-Encoding manualmente
+# --- Caching -------------------------------------------------------------------
+# Netlify merges every matching rule, so Cache-Control is set only on
+# non-overlapping paths. Anything not listed keeps Netlify's default
+# (public, max-age=0, must-revalidate).
+
+# Hashed build output: safe to cache forever.
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+    Cross-Origin-Resource-Policy = "cross-origin"
+
+# Data files are not hashed: short cache + background revalidation.
+[[headers]]
+  for = "/data/*"
+  [headers.values]
+    Cache-Control = "public, max-age=3600, stale-while-revalidate=86400"
+    Content-Type = "application/json"
+
+# Service worker and app shell must always be revalidated.
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "no-cache"
+
+# Non-hashed public files: short cache, then revalidate.
+[[headers]]
+  for = "/manifest.json"
+  [headers.values]
+    Cache-Control = "public, max-age=3600, must-revalidate"
+
+[[headers]]
+  for = "/favicon.png"
+  [headers.values]
+    Cache-Control = "public, max-age=3600, must-revalidate"
+
+[[headers]]
+  for = "/browserconfig.xml"
+  [headers.values]
+    Cache-Control = "public, max-age=3600, must-revalidate"
+
+[[headers]]
+  for = "/robots.txt"
+  [headers.values]
+    Cache-Control = "public, max-age=3600, must-revalidate"
+
+[[headers]]
+  for = "/screenshots/*"
+  [headers.values]
+    Cache-Control = "public, max-age=3600, must-revalidate"

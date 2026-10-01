@@ -1,422 +1,413 @@
 @import "tailwindcss";
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/geist-mono";
+
+/* Dark mode is class-driven: DarkModeContext toggles `.dark` on <html>. */
+@custom-variant dark (&:where(.dark, .dark *));
 
 /* =====================================================================
-   OVERRIDES DE UTILIDADES DARK EXISTENTES (slate) -> PALETA SEMÁNTICA
-   Razón: Muchos componentes siguen usando clases generadas como
-   dark:bg-slate-900 / dark:bg-slate-800 etc. Para no refactorizar
-   de inmediato todos los JSX, mapeamos esas clases al nuevo esquema
-   dim mediante variables CSS. Después se puede hacer una migración
-   gradual sustituyendo por bg-bg / bg-surface / bg-surface-alt.
+   Design tokens — shared with Booru Prompt Gallery (DESIGN.md there).
+   Cool blue-slate neutrals (hue ~250), one Deep Forest action color,
+   semantic families only where they carry meaning. All OKLCH.
    ===================================================================== */
-@layer utilities {
-  /* Ajuste: usar color específico de tarjetas / search (#283248) para 950/900 en lugar del fondo base */
-  .dark .dark\:bg-slate-950,
-  .dark .dark\:bg-slate-900 { background-color: var(--color-searchcard) !important; }
-  .dark .dark\:bg-slate-800 { background-color: var(--color-surface) !important; }
-  .dark .dark\:bg-slate-700 { background-color: var(--color-surface-alt) !important; }
-  .dark .dark\:bg-slate-600 { background-color: var(--color-elevated) !important; }
-
-  /* Gray scale legacy (Tailwind gray palette) */
-  .dark .dark\:bg-gray-950,
-  .dark .dark\:bg-gray-900 { background-color: var(--color-bg) !important; }
-  .dark .dark\:bg-gray-800 { background-color: var(--color-surface) !important; }
-  .dark .dark\:bg-gray-700 { background-color: var(--color-surface-alt) !important; }
-  .dark .dark\:bg-gray-600 { background-color: var(--color-elevated) !important; }
-  .dark .dark\:bg-gray-500 { background-color: var(--color-elevated) !important; }
-
-  .dark .dark\:border-gray-950,
-  .dark .dark\:border-gray-900,
-  .dark .dark\:border-gray-800,
-  .dark .dark\:border-gray-700,
-  .dark .dark\:border-gray-600,
-  .dark .dark\:border-gray-500 { border-color: #434c60 !important; }
-
-  .dark .dark\:text-gray-400 { color: var(--color-text-subtle) !important; }
-  .dark .dark\:text-gray-300 { color: var(--color-text-secondary) !important; }
-  .dark .dark\:text-gray-200 { color: var(--color-text-secondary) !important; }
-  .dark .dark\:text-gray-100 { color: var(--color-text) !important; }
-  .dark .dark\:text-white { color: var(--color-text) !important; }
-
-  .dark .dark\:border-slate-950,
-  .dark .dark\:border-slate-900,
-  .dark .dark\:border-slate-800,
-  .dark .dark\:border-slate-700,
-  .dark .dark\:border-slate-600 { border-color: #434c60 !important; }
-
-  .dark .dark\:text-slate-400 { color: var(--color-text-subtle) !important; }
-  .dark .dark\:text-slate-300 { color: var(--color-text-secondary) !important; }
-  .dark .dark\:text-white { color: var(--color-text) !important; }
-
-  /* Ajustes modo claro: normalizar grises a borde y superficies (evita negro percibido) */
-  html:not(.dark) .border-gray-200 { border-color: var(--color-border) !important; }
-  html:not(.dark) .border-gray-300 { border-color: var(--color-border) !important; }
-  html:not(.dark) .border-gray-400 { border-color: var(--color-border) !important; }
-  html:not(.dark) .ring-black\/5 { --tw-ring-color: color-mix(in srgb, var(--color-text) 12%, transparent) !important; }
-  html:not(.dark) .ring-black\/10 { --tw-ring-color: color-mix(in srgb, var(--color-text) 18%, transparent) !important; }
-  html:not(.dark) .text-gray-700 { color: var(--color-text-secondary) !important; }
-  html:not(.dark) .text-gray-600 { color: var(--color-text-secondary) !important; }
-  html:not(.dark) .text-gray-500 { color: var(--color-text-subtle) !important; }
-  /* Extensiones: asegurar consistencia y contraste mínimo en light mode */
-  html:not(.dark) .text-gray-900 { color: var(--color-text) !important; }
-  html:not(.dark) .text-gray-800 { color: var(--color-text) !important; }
-  html:not(.dark) .text-gray-400 { color: var(--color-text-subtle) !important; }
-}
-
-/* Salvaguarda: asegurar que en modo claro los elementos no hereden estilos dark accidentales */
-html:not(.dark) .dark\:bg-slate-900,
-html:not(.dark) .dark\:bg-slate-950,
-html:not(.dark) .dark\:bg-slate-800,
-html:not(.dark) .dark\:bg-slate-700,
-html:not(.dark) .dark\:bg-slate-600,
-html:not(.dark) .dark\:bg-gray-900,
-html:not(.dark) .dark\:bg-gray-950,
-html:not(.dark) .dark\:bg-gray-800,
-html:not(.dark) .dark\:bg-gray-700,
-html:not(.dark) .dark\:bg-gray-600 { background-color: initial !important; }
-
-html:not(.dark) .dark\:border-slate-900,
-html:not(.dark) .dark\:border-slate-950,
-html:not(.dark) .dark\:border-slate-800,
-html:not(.dark) .dark\:border-slate-700,
-html:not(.dark) .dark\:border-slate-600,
-html:not(.dark) .dark\:border-gray-900,
-html:not(.dark) .dark\:border-gray-950,
-html:not(.dark) .dark\:border-gray-800,
-html:not(.dark) .dark\:border-gray-700,
-html:not(.dark) .dark\:border-gray-600 { border-color: initial !important; }
-
-/* Dark mode: usamos la clase .dark en <html> gestionada por el contexto */
-
-/**
- * Solución para layout shift: Forzar scroll vertical siempre presente
- * - Evita que la barra de scroll aparezca/desaparezca durante cambios de contenido
- * - Previene el movimiento hacia la derecha durante búsquedas
- */
-
-/* Utilidades personalizadas usando CSS moderno */
-.line-clamp-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-/* Mejoras visuales globales */
-html {
-  overflow-y: scroll; /* Forzar scroll vertical para evitar layout shift */
-}
-
-body {
-  font-family: system-ui, -apple-system, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  overflow-y: scroll; /* Forzar scroll vertical para evitar layout shift */
-  background: var(--color-bg);
-  color: var(--color-text);
-}
-
-/* =====================================================================
-   Paleta accesible (WCAG AA/AAA) mediante variables CSS
-   - Contraste mínimo 4.5:1 para texto normal sobre superficies
-   - Variables semánticas para desacoplar colores de componentes
-   ===================================================================== */
-
 :root {
-  /* Superficies modo claro */
-  --color-bg: #ffffff; /* L0 */
-  --color-surface: #f5f7fa; /* L1 */
-  --color-surface-alt: #eef2f6; /* L2 */
-  --color-elevated: #e3e9ef; /* L3 */
-  --color-border: #d0d7e2;
+  --background: oklch(0.95 0.012 250);
+  --foreground: oklch(0.22 0.025 253);
+  --card: oklch(0.97 0.014 250);
+  --card-foreground: oklch(0.22 0.025 253);
+  --popover: oklch(0.97 0.014 250);
+  --popover-foreground: oklch(0.22 0.025 253);
+  --primary: oklch(0.34 0.075 150);
+  --primary-foreground: oklch(1 0 0);
+  --primary-text: oklch(0.34 0.075 150);
+  --secondary: oklch(0.9 0.014 250);
+  --secondary-foreground: oklch(0.24 0.02 253);
+  --muted: oklch(0.885 0.016 250);
+  --muted-foreground: oklch(0.46 0.022 252);
+  --accent: oklch(0.885 0.016 250);
+  --accent-foreground: oklch(0.24 0.02 253);
+  --border: oklch(0.83 0.02 248);
+  --input: oklch(0.83 0.02 248);
+  --ring: oklch(0.34 0.075 150);
+  --mix-soft: 10%;
+  --mix-border: 30%;
 
-  /* Texto claro */
-  --color-text: #0c111a; /* ~13.5:1 sobre bg */
-  --color-text-secondary: #374151; /* ~7:1 sobre surface */
-  --color-text-subtle: #5b6472; /* ~4.6:1 sobre surface */
+  --destructive: oklch(0.56 0.16 35);
+  --destructive-foreground: oklch(1 0 0);
+  --destructive-text: oklch(0.41 0.1441 35);
+  --success: oklch(0.62 0.1322 164);
+  --success-text: oklch(0.41 0.0875 164);
+  --warning: oklch(0.78 0.16 81);
+  --warning-text: oklch(0.41 0.0849 81);
+  --info: oklch(0.62 0.1595 246);
+  --info-text: oklch(0.41 0.1056 246);
 
-  /* Acciones / estados */
-  --color-accent: #0d62ff; /* Azul accesible */
-  --color-accent-hover: #084ccf;
-  /* Variante más clara solicitada para hover de títulos de TagCard */
-  --color-accent-light: #3fa9ff; /* Azul claro (puede ajustarse) */
-  --color-accent-on: #ffffff;
-  --color-focus-ring: #1d4ed8;
-  --color-danger: #b42318;
-  --color-danger-bg: #fee4e2;
-  --color-warning: #b54708;
-  --color-warning-bg: #fff4e0;
-  --color-success: #05603a;
-  --color-success-bg: #e6f4ee;
-  /* Tintes más notorios para botones de estado (NSFW toggle, etc.) */
-  --color-success-tint: #d2f5e7; /* contraste >4.5 con #05603a */
-  --color-danger-tint: #ffe3dc; /* contraste >4.5 con #b42318 */
-  /* Bordes fuertes (mejor separación en fondos tint) */
-  --color-success-border-strong: #0b6944; /* mezcla más oscura que texto */
-  --color-danger-border-strong: #912012;
+  --tag-general: oklch(0.62 0.16 255);
+  --tag-general-text: oklch(0.41 0.1353 255);
+  --tag-artist: oklch(0.56 0.16 25);
+  --tag-artist-text: oklch(0.41 0.1664 25);
+  --tag-copyright: oklch(0.56 0.16 325);
+  --tag-copyright-text: oklch(0.41 0.17 325);
+  --tag-character: oklch(0.62 0.16 145);
+  --tag-character-text: oklch(0.41 0.1292 145);
+  --tag-meta: oklch(0.56 0.1314 60);
+  --tag-meta-text: oklch(0.41 0.0964 60);
+  --tag-group: oklch(0.62 0.1375 238);
+  --tag-group-text: oklch(0.41 0.0911 238);
 
-  /* Categorías (badges) modo claro reforzadas para mayor visibilidad */
-  --cat-general-bg: #c2dcff; --cat-general-text: #083366;
-  --cat-artist-bg: #bfead3; --cat-artist-text: #064629;
-  --cat-copyright-bg: #d3c3ff; --cat-copyright-text: #402372;
-  --cat-character-bg: #ffb3b3; --cat-character-text: #611013;
-  --cat-meta-bg: #ffd97a; --cat-meta-text: #5b3c00;
-  --cat-default-bg: #ccd3db; --cat-default-text: #25303d;
-  /* Fondo tarjetas / search en modo claro (contraste suficiente con border #d0d7e2 y texto primario) */
-  --color-searchcard: #ffffff;
-  /* Variantes suaves y pills estados fuertes */
-  --color-accent-soft-bg: #e0eeff;
-  --color-accent-soft-bg-hover: #d2e6ff;
-  --color-accent-soft-text: #0d3d82;
-  --color-success-bg-strong: #c8e9dc;
-  --color-danger-bg-strong: #f9cdc7;
-  --color-warning-bg-strong: #ffe0b3;
+  /* Prompt taxonomy (Booru Prompt Gallery categories) */
+  --cat-appearance: oklch(0.56 0.16 45);
+  --cat-scenery: oklch(0.62 0.1522 123);
+  --cat-clothing: oklch(0.62 0.1141 178);
+  --cat-equipment: oklch(0.62 0.1065 192);
+  --cat-creature: oklch(0.62 0.1061 206);
+  --cat-pose: oklch(0.62 0.1129 220);
+  --cat-style: oklch(0.56 0.16 355);
+
+  --overlay: oklch(0.18 0.02 265);
+  --overlay-foreground: oklch(1 0 0);
 }
 
-/* ===================== MODO OSCURO CLARO (DIM) =====================
-   Sustituye al modo oscuro profundo para reducir fatiga visual
-   Objetivos:
-   - Fondo principal ~#1f2530 (no negro) => contraste suficiente sin deslumbrar.
-   - Capas ascendentes +6 a +12 de luminancia para jerarquía.
-   - Texto primario contraste >= 7:1, secundario >= 4.5:1.
-   - Mantener coherencia semántica con mismas variables.
-   ================================================================== */
 .dark {
-  /* Superficies modo oscuro claro (dim) con fondo solicitado */
-  --color-bg: #20283c; /* nuevo fondo base */
-  --color-surface: #273247; /* + ~6 luminancia */
-  --color-surface-alt: #2f3d54; /* + ~12 */
-  --color-elevated: #3d4c64; /* + ~20 */
-  --color-border: #434c60; /* actualizado según solicitud de nuevo color de borde */
+  --background: oklch(0.27 0.022 250);
+  --foreground: oklch(0.94 0.014 248);
+  --card: oklch(0.305 0.024 250);
+  --card-foreground: oklch(0.94 0.014 248);
+  --popover: oklch(0.305 0.024 250);
+  --popover-foreground: oklch(0.94 0.014 248);
+  --primary: oklch(0.64 0.11 150);
+  --primary-foreground: oklch(0.2 0.02 250);
+  --primary-text: oklch(0.66 0.11 150);
+  --secondary: oklch(0.35 0.022 250);
+  --secondary-foreground: oklch(0.94 0.014 248);
+  --muted: oklch(0.37 0.022 250);
+  --muted-foreground: oklch(0.78 0.02 250);
+  --accent: oklch(0.37 0.022 250);
+  --accent-foreground: oklch(0.94 0.014 248);
+  --border: oklch(0.4 0.024 250);
+  --input: oklch(0.4 0.024 250);
+  --ring: oklch(0.58 0.09 150);
+  --mix-soft: 16%;
+  --mix-border: 40%;
 
-  /* Texto (ratios >= AA) */
-  --color-text: #f5f7fa; /* > 12:1 */
-  --color-text-secondary: #d4dde6; /* ~7:1 contra surface */
-  --color-text-subtle: #adb7c5; /* ~4.7:1 contra surface */
+  --destructive: oklch(0.68 0.16 35);
+  --destructive-foreground: oklch(0.22 0.025 253);
+  --destructive-text: oklch(0.79 0.1235 35);
+  --success: oklch(0.71 0.1513 164);
+  --success-text: oklch(0.79 0.15 164);
+  --warning: oklch(0.78 0.16 81);
+  --warning-text: oklch(0.79 0.15 81);
+  --info: oklch(0.71 0.16 246);
+  --info-text: oklch(0.79 0.1133 246);
 
-  /* Acciones / estados (ajustados a nueva temperatura más fría) */
-  --color-accent: #6b9dff; /* contraste > 5:1 vs bg */
-  --color-accent-hover: #8ab3ff; /* más claro para hover accesible */
-  --color-accent-light: #a9c9ff; /* Azul claro para hover de títulos (dark) */
-  --color-accent-on: #20283c; /* texto interno sobre botón de acento */
-  --color-focus-ring: #4c88f6;
-  --color-danger: #ff9082; /* > 4.5:1 */
-  --color-danger-bg: #60353a; /* invertible accesible */
-  --color-warning: #f8d082; /* > 4.5:1 */
-  --color-warning-bg: #5f4b2d;
-  --color-success: #6cd7a6; /* > 4.5:1 */
-  --color-success-bg: #2c5642;
-  --color-success-tint: color-mix(in srgb, var(--color-success) 22%, var(--color-surface));
-  --color-danger-tint: color-mix(in srgb, var(--color-danger) 28%, var(--color-surface));
-  --color-success-border-strong: color-mix(in srgb, var(--color-success) 55%, #0d141d);
-  --color-danger-border-strong: color-mix(in srgb, var(--color-danger) 55%, #0d141d);
+  --tag-general: oklch(0.71 0.1539 255);
+  --tag-general-text: oklch(0.79 0.108 255);
+  --tag-artist: oklch(0.68 0.16 25);
+  --tag-artist-text: oklch(0.79 0.1213 25);
+  --tag-copyright: oklch(0.68 0.16 325);
+  --tag-copyright-text: oklch(0.79 0.15 325);
+  --tag-character: oklch(0.71 0.16 145);
+  --tag-character-text: oklch(0.79 0.15 145);
+  --tag-meta: oklch(0.68 0.1595 60);
+  --tag-meta-text: oklch(0.79 0.1486 60);
+  --tag-group: oklch(0.71 0.1575 238);
+  --tag-group-text: oklch(0.79 0.1211 238);
 
-  /* Categorías (badges) armonizadas con nueva base (#20283c) */
-  --cat-general-bg: #355075; --cat-general-text: #cfe5ff;
-  --cat-artist-bg: #2f5d49; --cat-artist-text: #cdf7e5;
-  --cat-copyright-bg: #514287; --cat-copyright-text: #e6dcff;
-  --cat-character-bg: #723f45; --cat-character-text: #ffdede;
-  --cat-meta-bg: #6f592e; --cat-meta-text: #ffecba;
-  --cat-default-bg: #455264; --cat-default-text: #e2e9f1;
-  /* Fondo específico para SearchBar y TagCards solicitado */
-  --color-searchcard: #283248;
-  /* Variantes suaves equivalentes en dark */
-  --color-accent-soft-bg: color-mix(in srgb, var(--color-accent) 25%, transparent);
-  --color-accent-soft-bg-hover: color-mix(in srgb, var(--color-accent) 35%, transparent);
-  --color-accent-soft-text: var(--color-text);
-  --color-success-bg-strong: color-mix(in srgb, var(--color-success) 25%, var(--color-bg));
-  --color-danger-bg-strong: color-mix(in srgb, var(--color-danger) 25%, var(--color-bg));
-  --color-warning-bg-strong: color-mix(in srgb, var(--color-warning) 25%, var(--color-bg));
+  --cat-appearance: oklch(0.68 0.16 45);
+  --cat-scenery: oklch(0.71 0.16 123);
+  --cat-clothing: oklch(0.71 0.1307 178);
+  --cat-equipment: oklch(0.71 0.1219 192);
+  --cat-creature: oklch(0.71 0.1215 206);
+  --cat-pose: oklch(0.71 0.1293 220);
+  --cat-style: oklch(0.68 0.16 355);
+
+  --overlay: oklch(0.18 0.02 265);
+  --overlay-foreground: oklch(1 0 0);
+
+  color-scheme: dark;
 }
 
-/* Utilidades semánticas basadas en variables */
-.bg-app { background-color: var(--color-bg); }
-.bg-surface { background-color: var(--color-surface); }
-.bg-surface-alt { background-color: var(--color-surface-alt); }
-.bg-elevated { background-color: var(--color-elevated); }
-.bg-searchcard { background-color: var(--color-searchcard); }
-.text-primary { color: var(--color-text); }
-.text-secondary { color: var(--color-text-secondary); }
-.text-subtle { color: var(--color-text-subtle); }
-.border-subtle { border-color: var(--color-border); }
-.dark .border-subtle { border-color: var(--color-border); }
-.accent { color: var(--color-accent); }
-.accent-light { color: var(--color-accent-light); }
-.accent-bg { background-color: var(--color-accent); color: var(--color-accent-on); }
-.accent-bg:hover { background-color: var(--color-accent-hover); }
-.bg-success-tint { background: var(--color-success-tint); }
-.bg-danger-tint { background: var(--color-danger-tint); }
-.border-success { border-color: var(--color-success); }
-.border-danger { border-color: var(--color-danger); }
-.border-success-strong { border-color: var(--color-success-border-strong); }
-.border-danger-strong { border-color: var(--color-danger-border-strong); }
-.focus-ring:focus-visible { outline: 2px solid var(--color-focus-ring); outline-offset: 2px; }
+/* Registers the tokens as Tailwind colors: bg-X, text-X-text, bg-X-soft, border-X-border… */
+@theme inline {
+  --font-sans: "Geist Variable", system-ui, sans-serif;
+  --font-mono: "Geist Mono Variable", ui-monospace, monospace;
 
-/* Botones secundarios / sutiles reutilizables (mejor visibilidad que bg-slate mapeado) */
-.btn-subtle { background: var(--color-accent-soft-bg); color: var(--color-accent-soft-text); font-weight:500; }
-.btn-subtle:hover { background: var(--color-accent-soft-bg-hover); }
-.btn-subtle:focus-visible { outline: 2px solid var(--color-focus-ring); outline-offset:2px; }
-/* Variante neutra (cuando no queremos color de acento) */
-.btn-neutral { background: var(--color-surface-alt); color: var(--color-text-secondary); border:1px solid var(--color-border); font-weight:500; }
-.btn-neutral:hover { background: var(--color-elevated); color: var(--color-text); }
-.btn-neutral:focus-visible { outline:2px solid var(--color-focus-ring); outline-offset:2px; }
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 12px;
 
-/* Botón Ko-fi: mejorar legibilidad sobre gradiente rojo/rosa */
-.kofi-btn { letter-spacing:.25px; color:#fff !important; font-weight:700; text-shadow:none; box-shadow:none !important; }
-.kofi-btn:focus, .kofi-btn:focus-visible { outline:none; box-shadow:none; }
+  --ease-out-expo: cubic-bezier(0.22, 1, 0.36, 1);
 
-/* Badges de categoría */
-.cat-badge { font-size: 0.75rem; line-height: 1rem; font-weight: 600; padding: 0.25rem 0.5rem; border-radius: 0.5rem; letter-spacing: .25px; display:inline-flex; align-items:center; gap:2px; }
-.cat-general { background: var(--cat-general-bg); color: var(--cat-general-text); }
-.cat-artist { background: var(--cat-artist-bg); color: var(--cat-artist-text); }
-.cat-copyright { background: var(--cat-copyright-bg); color: var(--cat-copyright-text); }
-.cat-character { background: var(--cat-character-bg); color: var(--cat-character-text); }
-.cat-meta { background: var(--cat-meta-bg); color: var(--cat-meta-text); }
-.cat-default { background: var(--cat-default-bg); color: var(--cat-default-text); }
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-text: var(--primary-text);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
 
-/* Estados / feedback */
-.status-danger { color: var(--color-danger); }
-.status-danger-bg { background: var(--color-danger-bg); color: var(--color-danger); }
-.status-warning { color: var(--color-warning); }
-.status-warning-bg { background: var(--color-warning-bg); color: var(--color-warning); }
-/* Nota: se había omitido el punto en .status-success-bg, por eso no se veía el fondo */
-.status-success { color: var(--color-success); }
-.status-success-bg { background: var(--color-success-bg); color: var(--color-success); }
-/* Pills estados accesibles */
-.status-success-pill { background: var(--color-success-bg-strong); color: var(--color-success); }
-.status-danger-pill { background: var(--color-danger-bg-strong); color: var(--color-danger); }
-.status-warning-pill { background: var(--color-warning-bg-strong); color: var(--color-warning); }
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-destructive-text: var(--destructive-text);
+  --color-destructive-soft: color-mix(in oklab, var(--destructive) var(--mix-soft), transparent);
+  --color-destructive-border: color-mix(in oklab, var(--destructive) var(--mix-border), transparent);
+  --color-success: var(--success);
+  --color-success-text: var(--success-text);
+  --color-success-soft: color-mix(in oklab, var(--success) var(--mix-soft), transparent);
+  --color-success-border: color-mix(in oklab, var(--success) var(--mix-border), transparent);
+  --color-warning: var(--warning);
+  --color-warning-text: var(--warning-text);
+  --color-warning-soft: color-mix(in oklab, var(--warning) var(--mix-soft), transparent);
+  --color-warning-border: color-mix(in oklab, var(--warning) var(--mix-border), transparent);
+  --color-info: var(--info);
+  --color-info-text: var(--info-text);
+  --color-info-soft: color-mix(in oklab, var(--info) var(--mix-soft), transparent);
+  --color-info-border: color-mix(in oklab, var(--info) var(--mix-border), transparent);
 
-/* Spoiler inline accesible (evita texto invisible en light mode por bg/text iguales) */
-.spoiler-inline { background: var(--color-surface-alt); color: var(--color-text-subtle); padding: 0 .25rem; border-radius: .25rem; cursor:pointer; transition: background-color .2s,color .2s; }
-.spoiler-inline:hover, .spoiler-inline[aria-expanded="true"] { color: var(--color-text); background: var(--color-elevated); }
-.dark .spoiler-inline { background: var(--color-surface-alt); color: var(--color-text-secondary); }
-.dark .spoiler-inline:hover, .dark .spoiler-inline[aria-expanded="true"] { color: var(--color-text); background: var(--color-elevated); }
+  --color-tag-general: var(--tag-general);
+  --color-tag-general-text: var(--tag-general-text);
+  --color-tag-artist: var(--tag-artist);
+  --color-tag-artist-text: var(--tag-artist-text);
+  --color-tag-copyright: var(--tag-copyright);
+  --color-tag-copyright-text: var(--tag-copyright-text);
+  --color-tag-character: var(--tag-character);
+  --color-tag-character-text: var(--tag-character-text);
+  --color-tag-meta: var(--tag-meta);
+  --color-tag-meta-text: var(--tag-meta-text);
+  --color-tag-group: var(--tag-group);
+  --color-tag-group-text: var(--tag-group-text);
 
-/* Scrollbar ahora usa variables para sincronizar con tema */
-::-webkit-scrollbar-track { background: var(--color-surface); }
-::-webkit-scrollbar-thumb { background: var(--color-border); }
-::-webkit-scrollbar-thumb:hover { background: var(--color-text-subtle); }
-.dark ::-webkit-scrollbar-track { background: var(--color-surface); }
-.dark ::-webkit-scrollbar-thumb { background: var(--color-border); }
-.dark ::-webkit-scrollbar-thumb:hover { background: var(--color-text-subtle); }
-
-/* Links y elementos interactivos base accesibles */
-a { color: var(--color-accent); }
-a:hover, a:focus-visible { color: var(--color-accent-hover); }
-button.primary-btn { background: var(--color-accent); color: var(--color-accent-on); }
-button.primary-btn:hover { background: var(--color-accent-hover); }
-button.primary-btn:focus-visible { outline: 2px solid var(--color-focus-ring); outline-offset:2px; }
-
-/* Elevación y bordes */
-.elevated { background: var(--color-elevated); box-shadow: 0 2px 4px rgba(0,0,0,.08); }
-.elevated-border { border: 1px solid var(--color-border); }
-
-/* Transición de tema: limitar a color/border para rendimiento */
-* { transition-property: background-color, border-color, color, fill, stroke; }
-
-/* Scrollbar personalizado (usa las variables semánticas) */
-::-webkit-scrollbar { width: 8px; }
-::-webkit-scrollbar-track { background: var(--color-surface); border-radius: .5rem; }
-::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: .5rem; }
-::-webkit-scrollbar-thumb:hover { background: var(--color-text-subtle); }
-/* dark variant hereda de variables ya redefinidas en .dark */
-
-/* Transiciones suaves para focus */
-input:focus,
-select:focus,
-button:focus {
-  outline: none;
+  --color-overlay: var(--overlay);
+  --color-overlay-foreground: var(--overlay-foreground);
 }
 
-/* Placeholder accesible (usa color sutil pero AA >= 4.5:1 sobre bg-surface) */
-::placeholder { color: var(--color-text-subtle); opacity:1; }
-html.dark ::placeholder { color: var(--color-text-subtle); }
-
-/* Mejoras específicas para móviles */
-@media (max-width: 640px) {
-  /* Mejorar el scroll en móviles */
+/* =====================================================================
+   Base
+   ===================================================================== */
+@layer base {
   html {
-    scroll-behavior: smooth;
-    -webkit-overflow-scrolling: touch; /* Scroll suave en iOS */
-  }
-  
-  /* NOTA: Antes se aplicaba min-height/min-width a TODOS los <button>,
-     causando que botones pequeños (icon-only, chips, toggles) se deformaran.
-     Ahora lo hacemos opt‑in mediante clase utilitaria para no romper layout. */
-  .touch-target-btn {
-    min-height: 44px; /* Recomendación WCAG para área táctil (~48px es común) */
-    min-width: 44px;
+    /* Always reserve the scrollbar so results never shift sideways. */
+    overflow-y: scroll;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
 
-  /* Para icon buttons circulares podemos asegurar área táctil sin alterar su forma
-     usando padding si su tamaño visual es menor a 40px */
-  .icon-btn {
-    min-height: 40px;
-    min-width: 40px;
-  }
-  
-  /* Mejorar la legibilidad del texto en móviles */
   body {
-    font-size: 16px; /* Previene zoom en iOS */
-  -webkit-text-size-adjust: 100%; /* Previene ajuste automático de texto en iOS */
-  text-size-adjust: 100%; /* Estándar */
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: "ss01", "cv11";
   }
-  
-  /* Optimizar el input para móviles */
-  input[type="text"],
-  input[type="search"] {
-    font-size: 16px; /* Previene zoom en iOS */
-    -webkit-appearance: none; /* Remueve estilos nativos de iOS */
-    appearance: none; /* Remueve estilos nativos (estándar) */
-  /* NOTE: No forzamos border-radius:0 para permitir redondeados personalizados
-     Fix: en móvil el input de búsqueda perdía el borde redondeado izquierdo */
+
+  /* Tailwind v4 defaults buttons to cursor:default; the UI expects a pointer. */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
   }
-  
-  /* Mejorar el espaciado en móviles */
-  .mobile-touch-target {
-    min-height: 44px;
-    min-width: 44px;
+
+  ::placeholder {
+    color: color-mix(in oklab, var(--muted-foreground) 70%, transparent);
+    opacity: 1;
   }
-  
-  /* Optimizar para pantallas táctiles */
-  * {
-    -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+
+  ::selection {
+    background: color-mix(in oklab, var(--primary) 25%, transparent);
+  }
+
+  a {
+    color: inherit;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 9999px;
+    border: 2px solid var(--background);
+  }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted-foreground); }
+
+  @media (max-width: 640px) {
+    /* 16px inputs stop iOS from zooming on focus. */
+    input[type="text"],
+    input[type="search"] {
+      font-size: 16px;
+    }
   }
 }
 
-/* Mejoras para tablets */
-@media (min-width: 641px) and (max-width: 1024px) {
-  /* Optimizar el layout para tablets */
-  .tablet-optimized {
-    max-width: 100%;
+/* =====================================================================
+   Components shared by JSX and by HTML strings built in utils/
+   (dtextFormatter, tagCategoryMap, copyFeedbackBubble).
+   ===================================================================== */
+@layer components {
+  /* Tag chips. Category color always travels with the tag's own label. */
+  .cat-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    border-radius: 9999px;
+    border: 1px solid var(--chip-border, var(--border));
+    background: var(--chip-bg, var(--secondary));
+    color: var(--chip-fg, var(--secondary-foreground));
+    padding: 0.125rem 0.625rem;
+    font-size: 0.75rem;
+    line-height: 1.33;
+    font-weight: 500;
+    text-decoration: none;
+    transition: background-color 150ms var(--ease-out-expo), border-color 150ms var(--ease-out-expo);
+  }
+  a.cat-badge:hover,
+  button.cat-badge:hover {
+    --chip-bg: color-mix(in oklab, var(--chip-hue, var(--muted-foreground)) calc(var(--mix-soft) * 2), transparent);
+  }
+  .cat-general,
+  .cat-artist,
+  .cat-copyright,
+  .cat-character,
+  .cat-meta,
+  .cat-group {
+    --chip-bg: color-mix(in oklab, var(--chip-hue) var(--mix-soft), transparent);
+    --chip-border: color-mix(in oklab, var(--chip-hue) var(--mix-border), transparent);
+  }
+  .cat-general { --chip-hue: var(--tag-general); --chip-fg: var(--tag-general-text); }
+  .cat-artist { --chip-hue: var(--tag-artist); --chip-fg: var(--tag-artist-text); }
+  .cat-copyright { --chip-hue: var(--tag-copyright); --chip-fg: var(--tag-copyright-text); }
+  .cat-character { --chip-hue: var(--tag-character); --chip-fg: var(--tag-character-text); }
+  .cat-meta { --chip-hue: var(--tag-meta); --chip-fg: var(--tag-meta-text); }
+  .cat-group { --chip-hue: var(--tag-group); --chip-fg: var(--tag-group-text); }
+  .cat-default { --chip-hue: var(--muted-foreground); }
+  /* Prompt taxonomy hues: only used for dots next to a label. */
+  .pc-appearance { --chip-hue: var(--cat-appearance); }
+  .pc-scenery { --chip-hue: var(--cat-scenery); }
+  .pc-clothing { --chip-hue: var(--cat-clothing); }
+  .pc-equipment { --chip-hue: var(--cat-equipment); }
+  .pc-creature { --chip-hue: var(--cat-creature); }
+  .pc-pose { --chip-hue: var(--cat-pose); }
+  .pc-style { --chip-hue: var(--cat-style); }
+
+  /* Small category dot, used next to a label (never alone). */
+  .cat-dot {
+    display: inline-block;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 9999px;
+    flex-shrink: 0;
+    background: var(--chip-hue, var(--muted-foreground));
+  }
+
+  /* Search match inside tag names. */
+  .search-hit {
+    background: var(--color-warning-soft);
+    color: inherit;
+    border-radius: 3px;
+    padding: 0 1px;
+    font-weight: 600;
+  }
+
+  /* Wiki links rendered from DText. */
+  .tag-link {
+    cursor: pointer;
+  }
+
+  .spoiler-inline {
+    background: var(--muted);
+    color: transparent;
+    padding: 0 0.25rem;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    transition: color 150ms var(--ease-out-expo);
+  }
+  .spoiler-inline:hover,
+  .spoiler-inline[aria-expanded="true"] {
+    color: var(--foreground);
+  }
+
+  /* Copy feedback bubble (built imperatively in utils/copyFeedbackBubble.ts). */
+  .copy-bubble {
+    background: var(--popover);
+    color: var(--popover-foreground);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 0.375rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+  }
+  .copy-bubble::before {
+    content: "";
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 9999px;
+    background: var(--primary);
+  }
+  .copy-bubble[data-state="error"]::before {
+    background: var(--destructive);
+  }
+
+  /* Prose for wiki bodies. */
+  .wiki-prose {
+    font-size: 0.875rem;
+    line-height: 1.625;
+    color: color-mix(in oklab, var(--foreground) 85%, transparent);
+    overflow-wrap: anywhere;
+  }
+  .wiki-prose p + p { margin-top: 0.75rem; }
+  .wiki-prose a:not(.cat-badge) {
+    color: var(--primary-text);
+    text-decoration: underline;
+    text-decoration-color: color-mix(in oklab, var(--primary-text) 35%, transparent);
+    text-underline-offset: 3px;
+  }
+  .wiki-prose a:not(.cat-badge):hover {
+    text-decoration-color: var(--primary-text);
   }
 }
 
-/* Mejoras para orientación landscape en móviles */
-@media (max-width: 640px) and (orientation: landscape) {
-  /* Reducir padding vertical en landscape */
-  .landscape-optimized {
-    padding-top: 0.5rem;
-    padding-bottom: 0.5rem;
-  }
+/* =====================================================================
+   Wiki modal: the generated list HTML forces single-line, fixed-height
+   items; let long entries wrap instead of overflowing.
+   ===================================================================== */
+[data-wiki-modal="true"] ul {
+  margin-left: 0;
+  padding-left: 0;
 }
-
-/* ================== TagCard title hover (forzamos prioridad) ================== */
-/* Nota: Usamos selector de grupo para sobreescribir .text-primary declarado después de Tailwind */
-.group:hover .tagcard-title { color: var(--color-accent-light) !important; }
-
-/* Mejoras para pantallas de alta densidad */
-@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
-  /* Optimizaciones para pantallas retina */
-  .high-dpi-optimized {
-    image-rendering: -webkit-optimize-contrast; /* Edge/Chrome (no estándar) */
-    image-rendering: crisp-edges; /* Firefox */
-    image-rendering: pixelated; /* Fallback genérico */
-  }
+[data-wiki-modal="true"] li {
+  white-space: normal !important;
+  height: auto !important;
+  line-height: 1.25rem;
+  flex-wrap: wrap;
+  align-items: flex-start;
 }
+[data-wiki-modal="true"] li,
+[data-wiki-modal="true"] a,
+[data-wiki-modal="true"] span {
+  overflow-wrap: anywhere;
+}
+[data-wiki-modal="true"] li .cat-badge { margin-bottom: 2px; }
 
-/* Mejoras de accesibilidad */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -424,78 +415,6 @@ html.dark ::placeholder { color: var(--color-text-subtle); }
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
-
-/* Mejoras para modo oscuro */
-.dark {
-  color-scheme: dark;
-}
-
-/* Transiciones suaves para cambios de tema */
-* { transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 200ms; }
-
-/* Indicador circular reutilizable para categorías (usa mismas variables que badges) */
-.cat-indicator { display:inline-block; width:0.75rem; height:0.75rem; border-radius:9999px; flex-shrink:0; }
-.cat-indicator.cat-general { background: var(--cat-general-bg); }
-.cat-indicator.cat-artist { background: var(--cat-artist-bg); }
-.cat-indicator.cat-copyright { background: var(--cat-copyright-bg); }
-.cat-indicator.cat-character { background: var(--cat-character-bg); }
-.cat-indicator.cat-meta { background: var(--cat-meta-bg); }
-.cat-indicator.cat-default { background: var(--cat-default-bg); }
-
-/* Badge autor (similar a bg-muted/50 text-muted-foreground hover:bg-secondary/80) */
-.author-badge { 
-  display:inline-flex; align-items:center; 
-  font-size:0.75rem; line-height:1rem; font-weight:500; 
-  padding:0.25rem 0.5rem; border-radius:9999px; 
-  background: rgba(238,242,246,0.6); /* fallback */
-  background: color-mix(in srgb, var(--color-surface-alt) 65%, transparent);
-  color: var(--color-text-subtle);
-  border:0; cursor: default; user-select:none; 
-  transition: background-color .2s,color .2s; 
-}
-.author-badge:hover { 
-  background: rgba(238,242,246,0.8); 
-  background: color-mix(in srgb, var(--color-surface-alt) 80%, transparent);
-}
-.dark .author-badge { 
-  background: rgba(46,58,71,0.4); 
-  background: color-mix(in srgb, var(--color-elevated) 55%, transparent); 
-  color: var(--color-text-secondary); 
-}
-.dark .author-badge:hover { 
-  background: rgba(46,58,71,0.6); 
-  background: color-mix(in srgb, var(--color-elevated) 70%, transparent); 
-}
-.author-badge:focus-visible { outline:2px solid var(--color-focus-ring); outline-offset:2px; }
-
-/* =====================================================================
-   FIX: Overflow de líneas largas en el modal (wiki) para tags como "solo"
-   - El HTML generado añade clases como `whitespace-nowrap h-8 flex` a cada <li>
-   - Eso fuerza una sola línea y altura fija (2rem) provocando que el texto
-     se desborde horizontal o verticalmente cuando es extenso.
-   - Override específico usando el atributo data-wiki-modal para no afectar
-     otras listas del sitio.
-   ===================================================================== */
-[data-wiki-modal="true"] ul { /* permitir que la lista envuelva y use bullets si se desea más tarde */
-  margin-left: 0; /* ya viene con estilos utilitarios */
-  padding-left: 0;
-}
-
-[data-wiki-modal="true"] li {
-  white-space: normal !important; /* anula whitespace-nowrap */
-  height: auto !important; /* anula h-8 fija */
-  line-height: 1.25rem; /* consistente con text-sm */
-  flex-wrap: wrap; /* permite que badges + texto bajen de línea */
-  align-items: flex-start; /* alinea inicio si hay varias líneas */
-}
-
-/* Forzar cortes seguros en palabras/largos identificadores con guiones bajos */
-[data-wiki-modal="true"] li, [data-wiki-modal="true"] a, [data-wiki-modal="true"] span {
-  overflow-wrap: anywhere; /* evita overflow horizontal en tokens largos */
-  word-break: break-word;  /* fallback */
-}
-
-/* Ajustar badges dentro de items multi-línea para que no estiren la línea */
-[data-wiki-modal="true"] li .cat-badge { margin-bottom: 2px; }

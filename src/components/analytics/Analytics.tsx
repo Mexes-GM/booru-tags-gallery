@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { performanceMonitor, usePerformanceMonitor } from '../../utils/performanceMonitor';
+import { performanceMonitor, usePerformanceMonitor, type PerformanceReport } from '../../utils/performanceMonitor';
 
 interface AnalyticsProps {
   children: React.ReactNode;
@@ -67,17 +67,14 @@ export const Analytics: React.FC<AnalyticsProps> = ({ children }) => {
       const scrollDepth = Math.round((scrollTop + windowHeight) / documentHeight * 100);
       
       if (scrollDepth > maxScrollDepth) {
+        const previousDepth = maxScrollDepth;
         maxScrollDepth = scrollDepth;
-        
-        // Record scroll milestones
-        if (scrollDepth >= 25 && maxScrollDepth < 25) {
-          recordInteraction('scroll', '25%');
-        } else if (scrollDepth >= 50 && maxScrollDepth < 50) {
-          recordInteraction('scroll', '50%');
-        } else if (scrollDepth >= 75 && maxScrollDepth < 75) {
-          recordInteraction('scroll', '75%');
-        } else if (scrollDepth >= 90 && maxScrollDepth < 90) {
-          recordInteraction('scroll', '90%');
+
+        // Record each scroll milestone the first time it is crossed
+        for (const milestone of [25, 50, 75, 90]) {
+          if (scrollDepth >= milestone && previousDepth < milestone) {
+            recordInteraction('scroll', `${milestone}%`);
+          }
         }
       }
     };
@@ -140,7 +137,7 @@ export const Analytics: React.FC<AnalyticsProps> = ({ children }) => {
 // Performance debug panel (development only)
 export const PerformanceDebugPanel: React.FC = () => {
   const { generateReport } = usePerformanceMonitor();
-  const [report, setReport] = useState<any>(null);
+  const [report, setReport] = useState<PerformanceReport | null>(null);
   const [isOpen, setIsOpen] = useState(false);
 
   // Only show in development
@@ -178,40 +175,40 @@ export const PerformanceDebugPanel: React.FC = () => {
   return (
     <>
       {/* Floating debug button */}
-      <div className="fixed bottom-4 right-4 z-50">
+      <div className="fixed bottom-4 left-4 z-50">
         <button
           onClick={handleGenerateReport}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow-lg text-sm font-medium transition-colors"
+          className="h-8 rounded-md border border-border bg-card px-2.5 font-mono text-xs text-muted-foreground shadow-sm transition-colors hover:text-foreground"
           title="Generate Performance Report"
         >
-          📊 Perf
+          perf
         </button>
       </div>
 
       {/* Debug panel modal */}
       {isOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
-            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+        <div className="fixed inset-0 bg-overlay/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-popover text-popover-foreground border border-border rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+            <div className="flex items-center justify-between p-4 border-b border-border">
+              <h2 className="text-lg font-semibold text-foreground">
                 Performance Report
               </h2>
               <div className="flex gap-2">
                 <button
                   onClick={handleExportMetrics}
-                  className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-sm transition-colors"
+                  className="px-3 py-1 bg-secondary text-secondary-foreground hover:bg-muted rounded text-sm transition-colors"
                 >
                   Export
                 </button>
                 <button
                   onClick={handleClearMetrics}
-                  className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-sm transition-colors"
+                  className="px-3 py-1 bg-secondary text-secondary-foreground hover:bg-muted rounded text-sm transition-colors"
                 >
                   Clear
                 </button>
                 <button
                   onClick={() => setIsOpen(false)}
-                  className="px-3 py-1 bg-gray-600 hover:bg-gray-700 text-white rounded text-sm transition-colors"
+                  className="px-3 py-1 bg-secondary text-secondary-foreground hover:bg-muted rounded text-sm transition-colors"
                 >
                   Close
                 </button>
@@ -223,30 +220,30 @@ export const PerformanceDebugPanel: React.FC = () => {
                 <div className="space-y-4">
                   {/* Summary */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded">
-                      <h3 className="font-medium text-blue-900 dark:text-blue-100">Resources</h3>
-                      <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                    <div className="bg-muted p-3 rounded">
+                      <h3 className="font-medium text-foreground">Resources</h3>
+                      <p className="text-2xl font-bold text-foreground">
                         {report.resources.total}
                       </p>
-                      <p className="text-sm text-blue-700 dark:text-blue-300">
+                      <p className="text-sm text-foreground">
                         {report.resources.totalSize} KB total
                       </p>
                     </div>
                     
-                    <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded">
-                      <h3 className="font-medium text-green-900 dark:text-green-100">Avg Load Time</h3>
-                      <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                    <div className="bg-muted p-3 rounded">
+                      <h3 className="font-medium text-foreground">Avg Load Time</h3>
+                      <p className="text-2xl font-bold text-foreground">
                         {report.resources.averageLoadTime}ms
                       </p>
                     </div>
                     
                     {report.memory && (
-                      <div className="bg-purple-50 dark:bg-purple-900/20 p-3 rounded">
-                        <h3 className="font-medium text-purple-900 dark:text-purple-100">Memory</h3>
-                        <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                      <div className="bg-muted p-3 rounded">
+                        <h3 className="font-medium text-foreground">Memory</h3>
+                        <p className="text-2xl font-bold text-foreground">
                           {report.memory.used} MB
                         </p>
-                        <p className="text-sm text-purple-700 dark:text-purple-300">
+                        <p className="text-sm text-foreground">
                           of {report.memory.total} MB
                         </p>
                       </div>
@@ -255,12 +252,12 @@ export const PerformanceDebugPanel: React.FC = () => {
 
                   {/* Resources by type */}
                   <div>
-                    <h3 className="font-medium text-gray-900 dark:text-white mb-2">Resources by Type</h3>
+                    <h3 className="font-medium text-foreground mb-2">Resources by Type</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                      {Object.entries(report.resources.byType).map(([type, data]: [string, any]) => (
-                        <div key={type} className="bg-gray-50 dark:bg-gray-700 p-2 rounded text-sm">
+                      {Object.entries(report.resources.byType).map(([type, data]) => (
+                        <div key={type} className="bg-muted p-2 rounded text-sm">
                           <div className="font-medium capitalize">{type}</div>
-                          <div className="text-gray-600 dark:text-gray-300">
+                          <div className="text-foreground">
                             {data.count} files, {data.size} KB, {data.avgDuration}ms avg
                           </div>
                         </div>
@@ -270,8 +267,8 @@ export const PerformanceDebugPanel: React.FC = () => {
 
                   {/* Recent metrics */}
                   <div>
-                    <h3 className="font-medium text-gray-900 dark:text-white mb-2">Recent Metrics</h3>
-                    <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded">
+                    <h3 className="font-medium text-foreground mb-2">Recent Metrics</h3>
+                    <div className="bg-muted p-3 rounded">
                       <pre className="text-xs overflow-x-auto">
                         {JSON.stringify(report.metrics.slice(-10), null, 2)}
                       </pre>

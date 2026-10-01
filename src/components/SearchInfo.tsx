@@ -13,15 +13,13 @@ interface SearchInfoProps {
   lastTranslatedFor?: string;
   resolvedCanonicalTerm?: string;
   originalInputTerm?: string;
+  /** Active prompt filter, e.g. "Clothing › Headwear". */
+  promptFilterLabel?: string;
 }
 
-const Badge: React.FC<{ children: React.ReactNode; variant?: 'default' | 'muted' }>
-  = ({ children, variant = 'default' }) => (
-  <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-    variant === 'default'
-      ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
-      : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300'
-  }`}>
+const Badge: React.FC<{ children: React.ReactNode; mono?: boolean }>
+  = ({ children, mono = false }) => (
+  <span className={`inline-flex items-center rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium text-secondary-foreground ${mono ? 'font-mono' : ''}`}>
     {children}
   </span>
 )
@@ -36,6 +34,7 @@ const SearchInfo: React.FC<SearchInfoProps> = ({
   lastTranslatedFor,
   resolvedCanonicalTerm,
   originalInputTerm,
+  promptFilterLabel,
 }) => {
   const { t } = useTranslation();
   const showBar = !!searchTerm
@@ -49,39 +48,44 @@ const SearchInfo: React.FC<SearchInfoProps> = ({
     if (!selectedCategory) return ''
     const key = selectedCategory.toLowerCase()
     if (key === 'tag_groups' || key === 'tag-groups') return t('search.categories.tagGroups')
-    return t(`search.categories.${key}` as any)
+    return t(`search.categories.${key}`)
   })()
 
   return (
-    <div className="flex flex-col gap-2 text-sm text-gray-600 dark:text-gray-300">
+    <div className="flex flex-col gap-1.5 text-sm text-muted-foreground" aria-live="polite">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-gray-500 dark:text-gray-400">{t('search.searching')}</span>
-        <Badge>
-          {(translatedTerm || searchTerm).replace(/\s+/g, '_')}
-        </Badge>
-        <span className="text-gray-400">{t('search.in')}</span>
-  <Badge variant="muted">{categoryLabel || selectedCategory}</Badge>
-        {!isLoading && (
-          <span className="text-gray-400">· {searchResults.length} {t(`search.${searchResults.length === 1 ? 'result' : 'results'}`)}</span>
+        <span>{t('search.searching')}</span>
+        <Badge mono>{(translatedTerm || searchTerm).replace(/\s+/g, '_')}</Badge>
+        <span>{t('search.in')}</span>
+        <Badge>{categoryLabel || selectedCategory}</Badge>
+        {promptFilterLabel && (
+          <>
+            <span aria-hidden="true" className="text-muted-foreground/60">›</span>
+            <Badge>{promptFilterLabel}</Badge>
+          </>
         )}
-        {isLoading && (
-          <span className="text-gray-400">· {t('search.loading')}</span>
+        <span aria-hidden="true" className="text-muted-foreground/40">·</span>
+        {isLoading ? (
+          <span>{t('search.loading')}</span>
+        ) : (
+          <span>
+            <span className="font-mono tabular-nums text-foreground">{searchResults.length}</span>{' '}
+            {t(`search.${searchResults.length === 1 ? 'result' : 'results'}`)}
+          </span>
         )}
       </div>
 
       {(isTranslating || showTranslation || showAlias) && (
-        <div className="flex flex-wrap items-center gap-2 text-xs">
-          {isTranslating && (
-            <Badge variant="muted">{t('search.translating')}</Badge>
-          )}
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+          {isTranslating && <span>{t('search.translating')}</span>}
           {showTranslation && (
             <span>
-              {t('search.translationOf')} "{originalInputTerm || searchTerm}" → <span className="font-medium">{translatedTerm}</span>
+              {t('search.translationOf')} &ldquo;{originalInputTerm || searchTerm}&rdquo; &rarr; <span className="font-medium text-foreground">{translatedTerm}</span>
             </span>
           )}
           {showAlias && (
             <span>
-              {t('search.aliasResolved')} → <span className="font-medium">{resolvedCanonicalTerm}</span>
+              {t('search.aliasResolved')} &rarr; <span className="font-medium text-foreground">{resolvedCanonicalTerm}</span>
             </span>
           )}
         </div>

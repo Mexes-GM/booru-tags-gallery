@@ -7,19 +7,6 @@
   background: transparent;
 }
 
-/* Contenedor de imagen con fallback sutil */
-.image-container::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  /* Mix entre fondo y surface-alt para un esqueleto suave */
-  background: linear-gradient(135deg,
-    color-mix(in srgb, var(--color-surface-alt) 65%, var(--color-bg)) 0%,
-    color-mix(in srgb, var(--color-surface) 85%, var(--color-bg)) 100%);
-  opacity: 0.30;
-  z-index: -1;
-}
-
 /* Imagen optimizada */
 .optimized-image {
   position: absolute;
@@ -49,12 +36,8 @@
 
 /* Contenedor de carga mejorado */
 .loading-container {
-  background: rgba(255, 255, 255, 0.7);
-  -webkit-backdrop-filter: blur(4px);
-  backdrop-filter: blur(4px);
   border-radius: 0.5rem;
   padding: 1rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 /* Animación de carga suave */
@@ -123,21 +106,4 @@
   }
 }
 
-/* Optimizaciones para modo oscuro */
-@media (prefers-color-scheme: dark) {
-  .image-container::before {
-    background: linear-gradient(135deg,
-      color-mix(in srgb, var(--color-surface-alt) 55%, var(--color-bg)) 0%,
-      color-mix(in srgb, var(--color-elevated) 80%, var(--color-bg)) 100%);
-    opacity: 0.22;
-  }
-}
-
-/* Optimizaciones para dispositivos de alta densidad */
-@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
-  .optimized-image {
-  image-rendering: -webkit-optimize-contrast;
-  image-rendering: crisp-edges;
-  image-rendering: pixelated;
-  }
-} 
+ 

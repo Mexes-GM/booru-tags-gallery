@@ -71,7 +71,7 @@ export function useTagModalData(selectedTagName: string | undefined) : UseTagMod
   // Usar siempre el formateador avanzado para incrustar imágenes de ejemplos también en tag groups
   // (el formateador maneja de forma segura los enlaces y contenido)
   return formatDTextAdvanced(wikiInfo.body, postImageMap, nsfwBlockedPosts);
-  }, [wikiInfo?.body, wikiInfo?.title, postImageMap, nsfwBlockedPosts]);
+  }, [wikiInfo?.body, postImageMap, nsfwBlockedPosts]);
 
   // Limpiar caché y cargar wiki/galería al cambiar de tag
   useEffect(() => {

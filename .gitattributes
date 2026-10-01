@@ -1,0 +1,3 @@
+# The CSP in vercel.json / netlify.toml allows the inline script in index.html by its
+# sha256 hash, so its bytes (line endings included) must be identical on every OS.
+index.html text eol=lf

@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { DanbooruPost } from '../types';
 
 interface UsePostImagesOptions {
@@ -11,7 +11,6 @@ export function usePostImages() {
   const [nsfwBlockedPosts, setNsfwBlockedPosts] = useState<Set<number>>(new Set());
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const cacheRef = useRef<{ [key: string]: DanbooruPost[] }>({});
 
   const loadImages = useCallback(
     async (postIds: number[], options?: UsePostImagesOptions) => {
@@ -33,13 +32,9 @@ export function usePostImages() {
           setImageMap({});
         }
         
-        // Crear clave de caché con timestamp para evitar problemas de caché
-        const cacheKey = `${postIds.sort().join('_')}_${nsfwFilter ? allowedRatings.join(',') : 'all'}_${Date.now()}`;
-        let posts: DanbooruPost[] = [];
-        
-        // Siempre obtener posts frescos cuando cambia el filtro NSFW
-        posts = await danbooruApi.getWikiPageManager().getPostsByIds(postIds, nsfwFilter ? { 'search[rating]': allowedRatings.join(',') } : {});
-        cacheRef.current[cacheKey] = posts;
+        // Lightweight posts, batched and cached per id by danbooruApi; the
+        // rating filter is applied client-side so toggling it doesn't refetch.
+        const posts: DanbooruPost[] = await danbooruApi.getWikiPageManager().getPostsByIds(postIds);
         
         const newImageMap: Record<number, string> = {};
         const blocked = new Set<number>();
@@ -56,8 +51,8 @@ export function usePostImages() {
         
         setImageMap(newImageMap); // Reemplazar completamente en lugar de fusionar
         setNsfwBlockedPosts(blocked); // Reemplazar completamente en lugar de fusionar
-      } catch (err: any) {
-        setError(err?.message || 'Error cargando imágenes');
+      } catch (err) {
+        setError((err instanceof Error && err.message) || 'Error cargando imágenes');
       } finally {
         setIsLoading(false);
       }
@@ -68,7 +63,6 @@ export function usePostImages() {
   const clearCache = useCallback(() => {
     setImageMap({});
     setNsfwBlockedPosts(new Set());
-    cacheRef.current = {};
   }, []);
 
   return {

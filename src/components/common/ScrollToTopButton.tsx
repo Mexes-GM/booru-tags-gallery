@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ArrowUp } from 'lucide-react';
 
 /**
  * ScrollToTopButton
@@ -52,11 +53,9 @@ const ScrollToTopButton: React.FC = () => {
     }
   }, [reducedMotion]);
 
-  // Clases base y estados para animación
-  const transitionBase = reducedMotion ? '' : 'transition-opacity transition-transform duration-300 ease-out will-change-transform will-change-opacity';
-  const hiddenState = reducedMotion ? 'opacity-0 pointer-events-none' : 'opacity-0 translate-y-3 scale-95 pointer-events-none';
-  const visibleState = reducedMotion ? 'opacity-100' : 'opacity-100 translate-y-0 scale-100';
-  const stateClasses = visible ? visibleState : hiddenState;
+  const stateClasses = visible
+    ? 'opacity-100 translate-y-0'
+    : 'pointer-events-none opacity-0 translate-y-2';
 
   return (
     <button
@@ -66,25 +65,9 @@ const ScrollToTopButton: React.FC = () => {
       aria-hidden={!visible}
       tabIndex={visible ? 0 : -1}
       data-state={visible ? 'visible' : 'hidden'}
-      className={`fixed bottom-5 right-5 sm:bottom-6 sm:right-6 z-50 group focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 rounded-full shadow-lg shadow-black/10 dark:shadow-black/30 ${transitionBase} ${stateClasses}`}
-      style={reducedMotion ? undefined : { transitionProperty: 'opacity, transform', willChange: 'opacity, transform' }}
+      className={`fixed bottom-5 right-5 z-50 flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card text-muted-foreground shadow-md transition-[opacity,transform,color] duration-200 ease-out-expo hover:text-foreground active:scale-[0.97] motion-reduce:transition-none sm:bottom-6 sm:right-6 ${stateClasses}`}
     >
-      <span className={`relative flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 text-white dark:text-white border border-white/20 dark:border-white/10 ${reducedMotion ? '' : 'transition-transform group-hover:scale-105 group-active:scale-95'}`}>
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={2}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="w-6 h-6 drop-shadow"
-        >
-          <path d="M12 19V5" />
-          <path d="M5 12l7-7 7 7" />
-        </svg>
-  <span className="sr-only">{t('ui.scrollToTop')}</span>
-      </span>
+      <ArrowUp className="h-4 w-4" aria-hidden="true" />
     </button>
   );
 };

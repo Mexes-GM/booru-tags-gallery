@@ -1,6 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
-import { useEffect, Suspense, lazy } from 'react';
+import { useEffect, useRef, Suspense, lazy } from 'react';
 import { useTranslation } from 'react-i18next';
 import { copyToClipboard } from './utils/copyUtils';
 import { showCopyFeedbackBubble } from './utils/copyFeedbackBubble';
@@ -16,83 +16,95 @@ import { ModalZIndexProvider } from './context/ModalZIndexContext';
 const TagModal = lazy(() => import('./components/common/TagModal'));
 const ImageModal = lazy(() => import('./components/common/ImageModal'));
 const PostBadgeTooltip = lazy(() => import('./components/common/PostBadgeTooltip'));
-const SettingsButton = lazy(() => import('./components/SettingsButton'));
+import AppHeader from './components/AppHeader';
 import { setupImageLinkHandler } from './utils/imageLinkHandler';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import LoadingSpinner from './components/common/LoadingSpinner';
 import { Analytics, PerformanceDebugPanel } from './components/analytics/Analytics';
-import './App.css';
 
 export default function App() {
   const { t } = useTranslation();
-  // Configurar el manejador global de clics en imágenes
+  // Keep the latest translator in a ref so the global listeners below are registered
+  // once, yet always show messages in the current language.
+  const tRef = useRef(t);
   useEffect(() => {
-    const cleanup = setupImageLinkHandler();
-    // Listener global para click derecho en enlaces de tags generados dinámicamente (.tag-link)
-    const handleContextMenu = async (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      const tagLink = target.closest('.tag-link') as HTMLElement | null;
-      if (tagLink) {
-        e.preventDefault();
-        e.stopPropagation();
-        // Evitar doble copia si acaba de ocurrir un long press
-        const now = Date.now();
-        const last = (lastLongPressRef as any).t as number | undefined;
-        if (last && now - last < 700) {
-          return; // suprimir copia duplicada
-        }
-        const tagName = tagLink.getAttribute('data-tag-name');
-        if (tagName) {
-          const ok = await copyToClipboard(tagName);
-          showCopyFeedbackBubble(ok ? t('clipboard.copySuccess') : t('clipboard.copyFail'), e.clientX, e.clientY, ok);
-          tagLink.classList.add('ring-2', ok ? 'ring-green-400':'ring-red-400');
-          setTimeout(()=>tagLink.classList.remove('ring-2','ring-green-400','ring-red-400'),700);
-        }
-      }
+    tRef.current = t;
+  }, [t]);
+
+  // Global handlers: image-link clicks, right-click copy and mobile long-press copy on .tag-link
+  useEffect(() => {
+    const cleanupImageLinks = setupImageLinkHandler();
+    // Timestamp of the last long-press copy, used to suppress the duplicate contextmenu copy
+    let lastLongPressAt = 0;
+
+    const flashLink = (link: HTMLElement, ok: boolean) => {
+      link.classList.add('ring-2', ok ? 'ring-primary' : 'ring-destructive');
+      window.setTimeout(() => link.classList.remove('ring-2', 'ring-primary', 'ring-destructive'), 700);
     };
-    document.addEventListener('contextmenu', handleContextMenu, true);
-    // Long press móvil genérico para enlaces .tag-link
+
+    const copyTagFromLink = async (link: HTMLElement, x: number, y: number): Promise<boolean> => {
+      const tagName = link.getAttribute('data-tag-name');
+      if (!tagName) return false;
+      const ok = await copyToClipboard(tagName);
+      const translate = tRef.current;
+      showCopyFeedbackBubble(ok ? translate('clipboard.copySuccess') : translate('clipboard.copyFail'), x, y, ok);
+      flashLink(link, ok);
+      return true;
+    };
+
+    // Right click on dynamically generated tag links (.tag-link) copies the tag name
+    const handleContextMenu = (e: MouseEvent) => {
+      const tagLink = (e.target as HTMLElement | null)?.closest?.('.tag-link') as HTMLElement | null;
+      if (!tagLink) return;
+      e.preventDefault();
+      e.stopPropagation();
+      // Avoid a double copy right after a long press (mobile fires contextmenu too)
+      if (lastLongPressAt && Date.now() - lastLongPressAt < 700) return;
+      void copyTagFromLink(tagLink, e.clientX, e.clientY);
+    };
+
+    // Generic mobile long press on .tag-link
+    const LONG_PRESS_MS = 550;
     let touchTimer: number | null = null;
     let touchTarget: HTMLElement | null = null;
-    const LONG_PRESS = 550;
-  const lastLongPressRef: { t?: number } = {};
-  const onTouchStart = (e: TouchEvent) => {
-      const targetEl = e.target as HTMLElement;
-      const link = targetEl.closest('.tag-link') as HTMLElement | null;
+
+    const onTouchStart = (e: TouchEvent) => {
+      const link = (e.target as HTMLElement | null)?.closest?.('.tag-link') as HTMLElement | null;
       if (!link) return;
       touchTarget = link;
       const firstTouch = e.touches[0];
-      // Guardar coordenadas inmediatamente (algunos navegadores invalidan el objeto Touch tras el timeout)
+      // Capture coordinates now (some browsers invalidate the Touch object after the timeout)
       const startX = firstTouch?.clientX ?? 0;
       const startY = firstTouch?.clientY ?? 0;
       touchTimer = window.setTimeout(async () => {
         if (!touchTarget) return;
-        const tagName = touchTarget.getAttribute('data-tag-name');
-        if (tagName) {
-          const ok = await copyToClipboard(tagName);
-          showCopyFeedbackBubble(
-            ok ? t('clipboard.copySuccess') : t('clipboard.copyFail'),
-            startX,
-            startY,
-            ok
-          );
-          touchTarget.classList.add('ring-2', ok ? 'ring-green-400':'ring-red-400');
-          setTimeout(()=>touchTarget?.classList.remove('ring-2','ring-green-400','ring-red-400'),700);
-          lastLongPressRef.t = Date.now();
+        if (await copyTagFromLink(touchTarget, startX, startY)) {
+          lastLongPressAt = Date.now();
         }
-      }, LONG_PRESS);
+      }, LONG_PRESS_MS);
     };
-  const clearTouch = () => {
+
+    const clearTouch = () => {
       if (touchTimer) {
         clearTimeout(touchTimer);
         touchTimer = null;
       }
       touchTarget = null;
     };
-  document.addEventListener('touchstart', onTouchStart, true);
+
+    document.addEventListener('contextmenu', handleContextMenu, true);
+    document.addEventListener('touchstart', onTouchStart, true);
     document.addEventListener('touchend', clearTouch, true);
     document.addEventListener('touchcancel', clearTouch, true);
-    return cleanup;
+
+    return () => {
+      cleanupImageLinks();
+      clearTouch();
+      document.removeEventListener('contextmenu', handleContextMenu, true);
+      document.removeEventListener('touchstart', onTouchStart, true);
+      document.removeEventListener('touchend', clearTouch, true);
+      document.removeEventListener('touchcancel', clearTouch, true);
+    };
   }, []);
 
   return (
@@ -105,12 +117,13 @@ export default function App() {
             <TagModalProvider>
               <ImageModalProvider>
                 <Router>
-                  <div className="min-h-screen bg-gray-100 dark:bg-gray-950 transition-colors duration-200">
+                  <div className="min-h-screen bg-background text-foreground">
+                    <AppHeader />
                     <main className="w-full">
                       <ErrorBoundary>
                         <Suspense fallback={
                           <div className="min-h-[50vh] flex items-center justify-center">
-                            <LoadingSpinner size="lg" className="text-blue-600 dark:text-blue-400" ariaLabel="Loading page" />
+                            <LoadingSpinner size="lg" ariaLabel="Loading page" />
                           </div>
                         }>
                           <Routes>
@@ -120,11 +133,6 @@ export default function App() {
                         </Suspense>
                       </ErrorBoundary>
                     </main>
-                    <ErrorBoundary>
-                      <Suspense fallback={null}>
-                        <SettingsButton />
-                      </Suspense>
-                    </ErrorBoundary>
                   </div>
                 </Router>
                 {/* Modals & tooltips lazy-mounted (suspended) so they don't block initial paint */}

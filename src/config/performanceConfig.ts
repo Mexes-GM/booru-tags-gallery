@@ -141,22 +141,6 @@ export const PERFORMANCE_CONFIG = {
   }
 };
 
-// Función para obtener configuración específica
-export const getPerformanceConfig = (key: string): any => {
-  const keys = key.split('.');
-  let config: any = PERFORMANCE_CONFIG;
-  
-  for (const k of keys) {
-    if (config && typeof config === 'object' && k in config) {
-      config = config[k];
-    } else {
-      return null;
-    }
-  }
-  
-  return config;
-};
-
 // Función para verificar si requestIdleCallback está disponible
 export const hasIdleCallback = (): boolean => {
   return 'requestIdleCallback' in window;
@@ -171,29 +155,6 @@ export const scheduleIdleWork = (callback: () => void, options: { timeout?: numb
   } else {
     return setTimeout(callback, PERFORMANCE_CONFIG.IDLE_CALLBACK.MIN_DELAY);
   }
-};
-
-// Función para debounce optimizado
-export const createDebounce = <T extends (...args: any[]) => any>(func: T, delay: number): (...args: Parameters<T>) => void => {
-  let timeoutId: ReturnType<typeof setTimeout>;
-  
-  return (...args: Parameters<T>) => {
-    clearTimeout(timeoutId);
-    timeoutId = setTimeout(() => func(...args), delay);
-  };
-};
-
-// Función para throttle optimizado
-export const createThrottle = <T extends (...args: any[]) => any>(func: T, delay: number): (...args: Parameters<T>) => void => {
-  let lastCall = 0;
-  
-  return (...args: Parameters<T>) => {
-    const now = Date.now();
-    if (now - lastCall >= delay) {
-      lastCall = now;
-      func(...args);
-    }
-  };
 };
 
 export default PERFORMANCE_CONFIG;

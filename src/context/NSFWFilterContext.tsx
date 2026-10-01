@@ -68,7 +68,7 @@ export function NSFWFilterProvider({ children }: NSFWFilterProviderProps) {
                 .filter(cacheName => cacheName.includes('image'))
                 .map(cacheName => window.caches.delete(cacheName))
             );
-          } catch (e) {
+          } catch {
             // Error clearing image cache
           }
         }

@@ -1,123 +1,47 @@
-// Script optimizado para pre-generar el índice de Fuse.js para tags.json
-// Ejecutar con: node scripts/generate-fuse-index.cjs
+// Pre-generates the Fuse.js index for public/data/tags.json.
+// (Tag groups are small and indexed at runtime by the worker, so no prebuilt index is needed.)
+// Run with: node scripts/generate-fuse-index.cjs   (npm run generate-fuse-index)
+//
+// IMPORTANT: the keys come from src/config/fuseKeys.json, the same file the
+// runtime (src/config/fuseOptions.ts) reads. A prebuilt index stores one slot
+// per key in key order, so index keys and runtime keys MUST be identical.
+// Regenerate the index whenever tags.json or fuseKeys.json changes.
+// Output is minified JSON.
 
 const fs = require('fs');
 const path = require('path');
 const Fuse = require('fuse.js');
 
-const TAGS_PATH = path.join(__dirname, '../public/data/tags.json');
-const INDEX_PATH = path.join(__dirname, '../public/data/fuse-index.json');
-const TAG_GROUPS_PATH = path.join(__dirname, '../public/data/tag-groups.json');
-const INDEX_GROUPS_PATH = path.join(__dirname, '../public/data/fuse-index-tag-groups.json');
+const ROOT = path.join(__dirname, '..');
+const TAGS_PATH = path.join(ROOT, 'public/data/tags.json');
+const INDEX_PATH = path.join(ROOT, 'public/data/fuse-index.json');
+const FUSE_KEYS = require(path.join(ROOT, 'src/config/fuseKeys.json'));
+
+const sizeMB = (file) => (fs.statSync(file).size / (1024 * 1024)).toFixed(2);
 
 function main() {
   const startTime = Date.now();
-  
-  const tagsRaw = fs.readFileSync(TAGS_PATH, 'utf8');
-  const tags = JSON.parse(tagsRaw);
-  
-  if (!Array.isArray(tags)) {
-    throw new Error('tags.json debe ser un array de objetos');
+  const tags = JSON.parse(fs.readFileSync(TAGS_PATH, 'utf8'));
+  if (!Array.isArray(tags)) throw new Error('tags.json must be an array of objects');
+
+  const tagIndex = Fuse.createIndex(FUSE_KEYS.tags, tags);
+  fs.writeFileSync(INDEX_PATH, JSON.stringify(tagIndex.toJSON()));
+
+  // Sanity check: the prebuilt index must answer alias queries with the runtime keys.
+  const fuse = new Fuse(tags, { keys: FUSE_KEYS.tags, includeScore: true, useExtendedSearch: true }, Fuse.parseIndex(JSON.parse(fs.readFileSync(INDEX_PATH, 'utf8'))));
+  const probe = tags.find((t) => Array.isArray(t.aliases) && t.aliases.length > 0);
+  if (probe) {
+    const hit = fuse.search({ aliases: `=${probe.aliases[0]}` }, { limit: 5 }).some((r) => r.item.name === probe.name);
+    if (!hit) throw new Error(`Index sanity check failed: alias "${probe.aliases[0]}" did not find "${probe.name}"`);
   }
+  console.log(`fuse-index.json: ${tags.length.toLocaleString('en')} tags, ${sizeMB(INDEX_PATH)} MB, keys [${FUSE_KEYS.tags.map((k) => k.name).join(', ')}]`);
 
-  // Opciones optimizadas de Fuse.js para búsquedas más inclusivas (tags)
-  const fuseOptions = {
-    keys: [
-      { name: 'name', weight: 1.0 },
-      { name: 'displayName', weight: 0.8 },
-      { name: 'aliases', weight: 0.5 }
-    ],
-    // Configuración optimizada para búsquedas más inclusivas
-    threshold: 0.6, // Aumentar threshold para capturar más resultados
-    includeScore: true,
-    includeMatches: true, // Habilitar para poder analizar las coincidencias
-    minMatchCharLength: 2, // Mínimo 2 caracteres
-    ignoreLocation: false, // Importante: mantener location para priorizar coincidencias al inicio
-    distance: 200, // Aumentar distancia para mejor cobertura
-    shouldSort: true,
-    findAllMatches: false, // Deshabilitar para mejor performance
-    useExtendedSearch: false,
-    // Nuevas optimizaciones
-    isCaseSensitive: false,
-    tokenize: true,
-    matchAllTokens: false,
-    location: 0,
-    cache: true
-  };
-
-  // Limitar a 100k tags si es necesario
-  const maxTags = 100000;
-  const tagsToIndex = tags.slice(0, maxTags);
-  
-  const indexStartTime = Date.now();
-  
-  const fuseIndex = Fuse.createIndex(fuseOptions.keys, tagsToIndex);
-
-  const indexTime = Date.now() - indexStartTime;
-  
-  // Guardar el índice serializado
-  const saveStartTime = Date.now();
-  
-  const indexData = fuseIndex.toJSON();
-  fs.writeFileSync(INDEX_PATH, JSON.stringify(indexData));
-  
-  const saveTime = Date.now() - saveStartTime;
-  const totalTime = Date.now() - startTime;
-  
-  // Estadísticas del archivo
-  const stats = fs.statSync(INDEX_PATH);
-  const fileSizeMB = (stats.size / (1024 * 1024)).toFixed(2);
-  
-  // Verificar que el índice se puede cargar correctamente
-  try {
-    const testFuse = new Fuse(tagsToIndex.slice(0, 100), fuseOptions, fuseIndex);
-    const testResults = testFuse.search('test');
-  } catch (error) {
-    console.error('❌ Error al verificar índice:', error.message);
-  }
-
-  // Generar índice para Tag Groups si existe el archivo
-  if (fs.existsSync(TAG_GROUPS_PATH)) {
-    try {
-      const groupsRaw = fs.readFileSync(TAG_GROUPS_PATH, 'utf8');
-      const groupsJson = JSON.parse(groupsRaw);
-      const groups = Array.isArray(groupsJson.groups) ? groupsJson.groups : [];
-      const groupsToIndex = groups.map(g => ({
-        id: String(g.id),
-        title: String(g.title || ''),
-        parents: Array.isArray(g.parents) ? g.parents.map(String) : [],
-        children: Array.isArray(g.children) ? g.children.map(String) : []
-      }));
-
-      const tgOptions = {
-        keys: [
-          { name: 'id', weight: 1.0 },
-          { name: 'title', weight: 0.9 }
-        ],
-        threshold: 0.35,
-        includeScore: true,
-        useExtendedSearch: true,
-        shouldSort: true,
-        minMatchCharLength: 1,
-        ignoreLocation: true,
-        distance: 100,
-        isCaseSensitive: false,
-        location: 0,
-        findAllMatches: false
-      };
-
-      const tgIndex = Fuse.createIndex(tgOptions.keys, groupsToIndex);
-      fs.writeFileSync(INDEX_GROUPS_PATH, JSON.stringify(tgIndex.toJSON()));
-    } catch (e) {
-      console.error('❌ Error al generar índice de tag groups:', e.message);
-    }
-  }
+  console.log(`Done in ${Date.now() - startTime} ms`);
 }
 
-// Manejo de errores
 try {
   main();
 } catch (error) {
-  console.error('❌ Error:', error.message);
+  console.error('Error:', error.message);
   process.exit(1);
 }

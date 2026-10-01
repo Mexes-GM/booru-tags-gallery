@@ -63,7 +63,7 @@ export const PostBadgeTooltip: React.FC = () => {
           try { element.setAttribute('data-rating', post.rating || ''); } catch { /* ignore */ }
         }
         setState(prev => ({ ...prev, loading: false, post }));
-      } catch (_err) {
+      } catch {
   setState(prev => ({ ...prev, loading: false, post: null }));
       }
     };
@@ -153,18 +153,18 @@ export const PostBadgeTooltip: React.FC = () => {
     >
     {/* Fondo: antes bg-white parecía "transparente" en light (se perdía contra el body).
       Usamos capa semántica + leve blur y reforzamos opacidad para contraste consistente. */}
-    <div className="relative bg-surface dark:bg-slate-800/95 border border-gray-200 dark:border-slate-600 rounded-md shadow-lg p-2 w-48 sm:w-56 backdrop-blur supports-[backdrop-filter]:bg-surface/95 dark:supports-[backdrop-filter]:bg-slate-800/90">
+    <div className="relative w-48 rounded-[10px] border border-border bg-popover p-2 text-popover-foreground shadow-md sm:w-56">
         {loading && (
-          <div className="flex items-center justify-center h-24 text-xs text-gray-500 dark:text-gray-400 animate-pulse">Cargando…</div>
+          <div className="h-24 animate-pulse rounded-lg bg-muted">Cargando…</div>
         )}
         {!loading && post === null && (
-          <div className="flex items-center justify-center h-24 text-xs text-gray-500 dark:text-gray-400">Sin datos</div>
+          <div className="flex items-center justify-center h-24 text-xs text-muted-foreground">Sin datos</div>
         )}
         {!loading && post && previewUrl && !blockedByNSFW && (
           <img
             src={previewUrl}
             alt={`Post #${post.id}`}
-            className="w-full h-auto max-h-48 object-contain rounded"
+            className="w-full h-auto max-h-48 object-contain rounded-lg"
             draggable={false}
           />
         )}
@@ -172,16 +172,16 @@ export const PostBadgeTooltip: React.FC = () => {
           <div className="relative w-full h-24 image-container">
             <div className="absolute inset-0 flex flex-col items-center justify-center">
               <div className="flex flex-col items-center justify-center text-center p-2">
-                <svg className="w-6 h-6 mx-auto mb-1 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-6 h-6 mx-auto mb-1 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
                 </svg>
-                <span className="text-[10px] font-medium text-red-600">Content blocked by NSFW filter</span>
+                <span className="text-xs font-medium text-muted-foreground">Content blocked by NSFW filter</span>
               </div>
             </div>
           </div>
         )}
         {!loading && post && (
-          <div className="mt-1 text-[10px] text-gray-600 dark:text-gray-400 flex justify-between gap-2">
+          <div className="mt-1.5 flex justify-between gap-2 font-mono text-xs tabular-nums text-muted-foreground">
             <span>#{post.id}</span>
             <span className="truncate max-w-[60%]">{blockedByNSFW ? '—' : `Score ${post.score}`}</span>
           </div>

@@ -1,6 +1,8 @@
 /**
- * Configuración de caché agresivo con persistencia de 7 días
- * Optimiza el almacenamiento en caché para mejorar el rendimiento y reducir solicitudes redundantes
+ * Cache configuration (TTLs, namespaces and in-memory entry caps).
+ * Storage backend: in-memory LRU + IndexedDB (see utils/aggressiveCache and
+ * services/danbooruApi/tieredCache). Only the translation cache uses
+ * localStorage.
  */
 
 export const AGGRESSIVE_CACHE_CONFIG = {
@@ -40,88 +42,30 @@ export const AGGRESSIVE_CACHE_CONFIG = {
       METADATA_CACHE: 'metadata_cache_',
     },
     
-    // Límites de almacenamiento
+    // Max entries kept in memory (LRU) per cache type
     MAX_ENTRIES_PER_TYPE: {
-      API_CACHE: 1000,
-      SEARCH_CACHE: 500,
-      IMAGE_CACHE: 2000,
+      API_CACHE: 500,
+      SEARCH_CACHE: 100,
+      IMAGE_CACHE: 1000,
       TRANSLATION_CACHE: 1000,
-      METADATA_CACHE: 1500,
+      METADATA_CACHE: 500,
     },
-    
-    // Tamaño máximo por entrada (en bytes)
-    MAX_ENTRY_SIZE: 1024 * 1024, // 1MB
-    
-    // Umbral para limpieza automática (porcentaje de uso)
-    CLEANUP_THRESHOLD: 0.8, // 80%
   },
-  
-  // Configuración de limpieza
-  CLEANUP: {
-    // Intervalo de limpieza automática - aumentado para reducir logs
-    AUTO_CLEANUP_INTERVAL: 5 * 60 * 60 * 1000, // 5 horas
-    
-    // Estrategias de limpieza
-    STRATEGIES: {
-      LRU: 'least_recently_used',
-      TTL: 'time_to_live',
-      SIZE: 'size_based',
-    },
-    
-    // Porcentaje de entradas a eliminar durante la limpieza
-    CLEANUP_PERCENTAGE: 0.2, // 20%
-  },
-  
-  // Configuración de compresión
-  COMPRESSION: {
-    ENABLED: true,
-    // Tamaño mínimo para comprimir (en bytes)
-    MIN_SIZE_TO_COMPRESS: 1024, // 1KB
-    // Algoritmo de compresión (usando LZ-string para compatibilidad)
-    ALGORITHM: 'lz-string',
-  },
-  
-  // Configuración de sincronización entre pestañas
+
+  // Cross-tab sync (only "clear all" is propagated)
   SYNC: {
     ENABLED: true,
-    // Canal de broadcast para sincronización
     BROADCAST_CHANNEL: 'danbooru_cache_sync',
-    // Eventos de sincronización
     EVENTS: {
       CACHE_UPDATE: 'cache_update',
       CACHE_CLEAR: 'cache_clear',
       CACHE_CLEANUP: 'cache_cleanup',
     },
   },
-  
-  // Configuración de métricas
-  METRICS: {
-    ENABLED: true,
-    // Almacenar métricas de rendimiento
-    TRACK_PERFORMANCE: true,
-    // Almacenar estadísticas de uso
-    TRACK_USAGE: true,
-    // Intervalo para guardar métricas
-    SAVE_INTERVAL: 5 * 60 * 1000, // 5 minutos
-  },
-  
-  // Configuración de recuperación de errores
-  ERROR_RECOVERY: {
-    // Reintentos automáticos en caso de error de caché
-    AUTO_RETRY: true,
-    MAX_RETRIES: 3,
-    RETRY_DELAY: 1000, // 1 segundo
-    
-    // Fallback a memoria si localStorage falla
-    MEMORY_FALLBACK: true,
-    
-    // Limpiar caché corrupto automáticamente
-    AUTO_CLEAR_CORRUPTED: true,
-  },
 };
 
 // Tipos para el sistema de caché agresivo
-export interface AggressiveCacheEntry<T = any> {
+export interface AggressiveCacheEntry<T = unknown> {
   data: T;
   timestamp: number;
   ttl: number;

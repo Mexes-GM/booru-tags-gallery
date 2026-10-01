@@ -6,7 +6,7 @@ import { defineConfig, globalIgnores } from 'eslint/config'
 import tseslint from 'typescript-eslint'
 
 export default defineConfig([
-  globalIgnores(['dist', '.netlify/**/*']),
+  globalIgnores(['dist', 'dev-dist', '.netlify/**/*', 'node_modules_bak2', 'netlify/functions/node_modules', 'docs']),
   // Configuración para archivos JS/JSX
   {
     files: ['**/*.{js,jsx}'],

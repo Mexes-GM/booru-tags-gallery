@@ -115,72 +115,47 @@ const StableInfiniteScroll: React.FC<StableInfiniteScrollProps> = ({
   }, [rateLimitInfo])
 
   return (
-    <>
-      <div className="max-w-5xl mx-auto w-full">
-        <div
-          ref={containerRef}
-          className={`grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 transition-all duration-300 ease-in-out w-full overflow-visible ${
-            isTransitioning 
-              ? 'opacity-40 blur-sm' 
-              : 'opacity-100 blur-0'
-          }`}
-          style={{ position: 'relative', overflow: 'visible' }}
-        >
-          {renderTagCards}
-        </div>
-
-        {/* Loading indicator */}
-        <div ref={loadingRef} className="mt-6 sm:mt-8">
-          {isLoadingMore && (
-            <div className="flex flex-col items-center py-6 sm:py-8">
-              <LoadingSpinner size="lg" />
-              <p className="mt-3 sm:mt-4 text-gray-600 dark:text-slate-400 text-sm sm:text-base">{t('homepage.loadingMoreTags')}</p>
-            </div>
-          )}
-          
-          {!hasMore && !searchTerm.trim() && (
-            <div className="text-center py-6 sm:py-8">
-              <p className="text-gray-600 dark:text-slate-400 text-sm sm:text-base">{t('homepage.allTagsSeen')}</p>
-            </div>
-          )}
-
-          {/* Rate limit message */}
-          {rateLimitInfo?.isRateLimited && hasMore && (
-            <div className="text-center py-6 sm:py-8">
-              <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-xl p-4 sm:p-6 max-w-md mx-auto">
-                <div className="flex items-center justify-center gap-2 sm:gap-3 mb-2">
-                  <svg className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                  </svg>
-                  <p className="text-yellow-800 dark:text-yellow-300 font-medium text-sm sm:text-base">
-                    {t('homepage.rateLimitTitle')}
-                  </p>
-                </div>
-                <p className="text-yellow-700 dark:text-yellow-400 text-xs sm:text-sm mb-2">
-                  {t('homepage.rateLimitDescription')}
-                </p>
-                <p className="text-yellow-600 dark:text-yellow-500 text-xs">
-                  {getTimeUntilReset() && t('homepage.rateLimitReset', { minutes: getTimeUntilReset() })}
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Low rate limit warning */}
-          {rateLimitInfo && !rateLimitInfo.isRateLimited && rateLimitInfo.remaining <= 3 && hasMore && (
-            <div className="text-center py-3 sm:py-4">
-              <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-700 rounded-lg p-3 sm:p-4 max-w-md mx-auto">
-                <p className="text-orange-700 dark:text-orange-300 text-xs sm:text-sm">
-                  ⚠️ {t('homepage.lowRateLimit', { remaining: rateLimitInfo.remaining, limit: rateLimitInfo.limit })}
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
+    <div className="w-full">
+      <div
+        ref={containerRef}
+        className={`grid w-full grid-cols-2 gap-3 transition-opacity duration-200 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 ${
+          isTransitioning ? 'opacity-50' : 'opacity-100'
+        }`}
+      >
+        {renderTagCards}
       </div>
-      
 
-    </>
+      <div ref={loadingRef} className="mt-8">
+        {isLoadingMore && (
+          <div className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
+            <LoadingSpinner size="sm" />
+            <span>{t('homepage.loadingMoreTags')}</span>
+          </div>
+        )}
+
+        {!hasMore && !searchTerm.trim() && (
+          <p className="py-6 text-center text-sm text-muted-foreground">{t('homepage.allTagsSeen')}</p>
+        )}
+
+        {rateLimitInfo?.isRateLimited && hasMore && (
+          <div className="mx-auto max-w-md rounded-xl border border-warning-border bg-warning-soft p-4 text-center">
+            <p className="text-sm font-medium text-warning-text">{t('homepage.rateLimitTitle')}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{t('homepage.rateLimitDescription')}</p>
+            {getTimeUntilReset() && (
+              <p className="mt-1 font-mono text-xs tabular-nums text-muted-foreground">
+                {t('homepage.rateLimitReset', { minutes: getTimeUntilReset() })}
+              </p>
+            )}
+          </div>
+        )}
+
+        {rateLimitInfo && !rateLimitInfo.isRateLimited && rateLimitInfo.remaining <= 3 && hasMore && (
+          <p className="mx-auto max-w-md rounded-lg border border-warning-border bg-warning-soft px-3 py-2 text-center text-xs text-warning-text">
+            {t('homepage.lowRateLimit', { remaining: rateLimitInfo.remaining, limit: rateLimitInfo.limit })}
+          </p>
+        )}
+      </div>
+    </div>
   )
 }
 

@@ -4,8 +4,10 @@ import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { useImageModal } from '../../context/useImageModal';
 import { useTagModal } from '../../context/useTagModal';
-import { useModalZIndex } from '../../context/ModalZIndexContext';
+import { useModalZIndex } from '../../context/useModalZIndex';
 import LoadingSpinner from './LoadingSpinner';
+import CopyButton from '../ui/CopyButton';
+import { AlertTriangle, ChevronLeft, ChevronRight, ExternalLink, ShieldAlert, X } from 'lucide-react';
 import { getCategoryClass } from '../../utils/categoryUtils';
 import { DanbooruPost, LocalTagData } from '../../types';
 import { loadTagsData, getCachedTags } from '../../utils/sharedTagDataLoader';
@@ -29,7 +31,7 @@ const ImageModal: React.FC = () => {
   let nsfwFilterEnabled = false; let allowedRatings: string[] | undefined;
   try { const ctx = useNSFWFilter(); nsfwFilterEnabled = ctx.isNSFWFilterEnabled; allowedRatings = ctx.getRatingParams().allowedRatings; } catch {}
   const { openModalByTagName } = useTagModal();
-  const { getModalZIndex, setActiveModal, releaseModal, activeModal } = useModalZIndex();
+  const { getModalZIndex, setActiveModal, releaseModal } = useModalZIndex();
   const { t } = useTranslation();
   
   const modalRef = useRef<HTMLDivElement>(null);
@@ -62,22 +64,21 @@ const ImageModal: React.FC = () => {
     return () => { cancelled = true; };
   }, []);
 
-  // Gestionar z-index cuando el modal se abre/cierra
+  // Registrar/liberar el modal en el gestor de z-index cuando se abre/cierra
   useEffect(() => {
     if (isModalOpen) {
       setActiveModal('image');
-      setZIndex(getModalZIndex('image'));
     } else {
       releaseModal('image');
     }
   }, [isModalOpen, setActiveModal, releaseModal]);
 
-  // Actualizar z-index cuando cambia el modal activo
+  // Actualizar z-index cuando cambia el modal activo (getModalZIndex se recrea al cambiar activeModal/openModals)
   useEffect(() => {
     if (isModalOpen) {
       setZIndex(getModalZIndex('image'));
     }
-  }, [isModalOpen, activeModal]); // Dependemos de activeModal en lugar de getModalZIndex
+  }, [isModalOpen, getModalZIndex]);
 
   // Reset image states when post changes
   useEffect(() => {
@@ -145,15 +146,6 @@ const ImageModal: React.FC = () => {
     }, 2000);
   };
 
-  // Función para copiar todos los tags (usa utilidad centralizada)
-  const copyAllTags = async (event?: React.MouseEvent) => {
-    if (!selectedPost?.tag_string) return;
-    const tags = selectedPost.tag_string.split(' ').filter(tag => tag.trim() !== '');
-    const tagsText = tags.join(', '); // copyToClipboard ya formatea underscores
-  const ok = await copyToClipboard(tagsText);
-  showCopyFeedback(ok ? t('clipboard.copySuccess') : t('clipboard.copyFail'), event);
-  };
-
   // Función para copiar un tag individual
   const copyIndividualTag = async (tagName: string, event?: MouseEvent | { clientX: number; clientY: number }) => {
     const ok = await copyToClipboard(tagName);
@@ -161,7 +153,7 @@ const ImageModal: React.FC = () => {
       showCopyFeedback(ok ? t('clipboard.copySuccess') : t('clipboard.copyFail'), {
         clientX: event.clientX,
         clientY: event.clientY
-      } as any);
+      });
     } else {
       showCopyFeedback(ok ? t('clipboard.copySuccess') : t('clipboard.copyFail'));
     }
@@ -205,11 +197,11 @@ const ImageModal: React.FC = () => {
 
   const getRatingColor = (rating: string) => {
     switch (rating) {
-  case 'g': return 'status-success';
-      case 's': return 'text-yellow-600 dark:text-yellow-400';
-      case 'q': return 'text-orange-600 dark:text-orange-400';
-      case 'e': return 'text-red-600 dark:text-red-400';
-      default: return 'text-gray-600 dark:text-gray-400';
+      case 'g': return 'cat-character';
+      case 's': return 'cat-meta';
+      case 'q': return 'cat-artist';
+      case 'e': return 'cat-artist';
+      default: return 'cat-default';
     }
   };
 
@@ -227,7 +219,7 @@ const ImageModal: React.FC = () => {
 
   return createPortal(
     <div 
-      className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm p-2 lg:p-4"
+      className="modal-backdrop fixed inset-0 flex items-center justify-center bg-overlay/60 p-2 lg:p-6"
       style={{ zIndex }}
       role="dialog" 
       aria-modal="true"
@@ -235,59 +227,45 @@ const ImageModal: React.FC = () => {
     >
       <div
         ref={modalRef}
-  className="modal-shell relative max-w-7xl h-[98vh] lg:h-[95vh] bg-surface dark:bg-[var(--color-searchcard)] rounded-lg shadow-2xl outline-none border border-subtle"
+  className="modal-shell modal-content relative h-[98vh] max-w-7xl rounded-xl border border-border bg-background text-foreground shadow-2xl outline-none lg:h-[92vh]"
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
         style={{ maxWidth: 'min(100vw, 95rem)' }}
       >
         {/* Header */}
-  <div className="flex items-center justify-between p-3 lg:p-4 border-b border-subtle flex-shrink-0 bg-surface-alt dark:bg-[var(--color-searchcard)]/60 backdrop-blur-sm">
-          {/* Botones de navegación historial */}
-          <div className="flex gap-1 lg:gap-2">
+        <div className="flex flex-shrink-0 items-center gap-2 border-b border-border px-2 py-2 lg:gap-3 lg:px-4">
+          <div className="flex gap-1">
             <button
               onClick={goBack}
               disabled={!canGoBack}
-              className="rounded-full p-1.5 lg:p-2 border border-subtle bg-surface-alt dark:bg-[var(--color-searchcard)]/70 shadow transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-40 disabled:cursor-not-allowed"
+              className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
               aria-label={t('common.previous')}
-              tabIndex={0}
             >
-              <svg className="w-4 h-4 lg:w-5 lg:h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-              </svg>
+              <ChevronLeft className="h-4 w-4" aria-hidden="true" />
             </button>
             <button
               onClick={goForward}
               disabled={!canGoForward}
-              className="rounded-full p-1.5 lg:p-2 border border-subtle bg-surface-alt dark:bg-[var(--color-searchcard)]/70 shadow transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-40 disabled:cursor-not-allowed"
+              className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
               aria-label={t('common.next')}
-              tabIndex={0}
             >
-              <svg className="w-4 h-4 lg:w-5 lg:h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-              </svg>
+              <ChevronRight className="h-4 w-4" aria-hidden="true" />
             </button>
           </div>
-          
-          {/* Título centrado */}
-          <div className="flex items-center gap-2 lg:gap-3 flex-1 justify-center min-w-0">
-            <div className="text-center">
-              <h2 className="text-lg lg:text-xl font-semibold text-primary truncate">
-                {selectedPost ? `Post #${selectedPost.id}` : 'Loading...'}
-              </h2>
-              {/* (Removed resolution and score line as requested) */}
-            </div>
+
+          <div className="flex min-w-0 flex-1 items-center justify-center">
+            <h2 className="truncate font-mono text-sm font-medium tabular-nums lg:text-base">
+              {selectedPost ? `Post #${selectedPost.id}` : t('common.loading')}
+            </h2>
           </div>
-          
-          {/* Botón de cerrar */}
-          <div className="w-12 lg:w-20 flex justify-end">
+
+          <div className="flex items-center gap-1">
             <button
               onClick={closeModal}
-              className="p-1.5 lg:p-2 text-text-secondary hover:text-text bg-transparent hover:bg-surface-alt dark:hover:bg-[var(--color-searchcard)]/50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
               aria-label={t('modal.close')}
             >
-              <svg className="w-5 h-5 lg:w-6 lg:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              <X className="h-5 w-5" aria-hidden="true" />
             </button>
           </div>
         </div>
@@ -301,7 +279,7 @@ const ImageModal: React.FC = () => {
           ) : selectedPost ? (
             <>
               {/* Imagen - Arriba en móvil, izquierda en desktop */}
-              <div className="flex-1 lg:flex-1 flex items-center justify-center bg-surface-alt dark:bg-[var(--color-searchcard)]/40 p-2 lg:p-4 overflow-hidden min-h-[40vh] lg:min-h-0">
+              <div className="flex min-h-[40vh] flex-1 items-center justify-center overflow-hidden bg-muted/40 p-2 lg:min-h-0 lg:p-4">
                 <div className="relative w-full h-full flex items-center justify-center">
                   {!imageLoaded && !imageError && (
                     <div className="absolute inset-0 flex items-center justify-center">
@@ -309,11 +287,9 @@ const ImageModal: React.FC = () => {
                     </div>
                   )}
                   {imageError ? (
-                    <div className="flex flex-col items-center justify-center p-4 lg:p-8 text-gray-500 dark:text-slate-400">
-                      <svg className="w-12 h-12 lg:w-16 lg:h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                      </svg>
-                      <p className="text-sm lg:text-base">Error loading image</p>
+                    <div className="flex flex-col items-center justify-center gap-3 p-6 text-muted-foreground">
+                      <AlertTriangle className="h-10 w-10" strokeWidth={1.5} aria-hidden="true" />
+                      <p className="text-sm">Error loading image</p>
                     </div>
                   ) : selectedPost ? (
                     (() => {
@@ -323,11 +299,9 @@ const ImageModal: React.FC = () => {
                         return (
                           <div className="relative w-full h-80 image-container">
                             <div className="absolute inset-0 flex flex-col items-center justify-center">
-                              <div className="flex flex-col items-center justify-center text-center p-4">
-                                <svg className="w-8 h-8 sm:w-10 sm:h-10 mx-auto mb-2 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                                </svg>
-                                <span className="text-xs sm:text-sm font-medium text-red-600">Content blocked by NSFW filter</span>
+                              <div className="flex flex-col items-center justify-center gap-2 p-4 text-center text-muted-foreground">
+                                <ShieldAlert className="h-8 w-8" strokeWidth={1.5} aria-hidden="true" />
+                                <span className="text-sm font-medium">{t('nsfw.blocked')}</span>
                               </div>
                             </div>
                           </div>
@@ -349,12 +323,12 @@ const ImageModal: React.FC = () => {
               </div>
 
               {/* Información - Abajo en móvil, derecha en desktop */}
-              <div className="w-full lg:w-80 border-t lg:border-t-0 lg:border-l border-subtle overflow-y-auto max-h-[50vh] lg:max-h-none bg-surface/60 dark:bg-[var(--color-searchcard)]/30 backdrop-blur-sm">
-                <div className="p-3 lg:p-6 space-y-3 lg:space-y-6">
+              <div className="max-h-[50vh] w-full overflow-y-auto border-t border-border bg-card lg:max-h-none lg:w-80 lg:border-l lg:border-t-0">
+                <div className="space-y-5 p-4 lg:p-5">
                   {/* Rating */}
                   <div>
-                    <h3 className="text-sm font-medium text-primary mb-1 lg:mb-2">Rating</h3>
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRatingColor(selectedPost.rating)}`}>
+                    <h3 className="mb-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">Rating</h3>
+                    <span className={`cat-badge ${getRatingColor(selectedPost.rating)}`}>
                       {getRatingText(selectedPost.rating)}
                     </span>
                   </div>
@@ -363,28 +337,21 @@ const ImageModal: React.FC = () => {
 
                   {/* Tags */}
                   <div>
-                    <div className="flex items-center justify-between mb-1 lg:mb-2">
-                      <h3 className="text-sm font-medium text-primary">Tags</h3>
-                      <button
-                        onClick={(e) => copyAllTags(e)}
-                        /* btn-subtle asegura un fondo perceptible en ambos temas */
-                        className="px-2 lg:px-3 py-1 text-xs rounded-md transition-colors flex items-center gap-1 btn-subtle shadow-sm hover:shadow focus-ring"
-                        title={t('ui.copyAllTags')}
-                      >
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                        </svg>
-                        <span className="text-xs">{t('ui.copy')}</span>
-                      </button>
+                    <div className="mb-2 flex items-center justify-between gap-2">
+                      <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Tags</h3>
+                      <CopyButton
+                        text={selectedPost.tag_string.split(' ').filter(tag => tag.trim() !== '').join(', ')}
+                        label={t('ui.copyAllTags')}
+                        size="sm"
+                      />
                     </div>
-                    <div className="flex flex-wrap gap-0.5 md:gap-1">
+                    <div className="flex flex-wrap gap-1">
                       {selectedPost.tag_string.split(' ').map((tag, index) => {
                         const tagData = findTagByName(tag);
                         // Asegurar clase base cat-badge y consistencia de hover con wiki modal
-                        const baseInteractive = 'hover:opacity-80 active:opacity-90 focus:outline-none focus:ring-2 focus:ring-blue-400/40';
                         const categoryClass = tagData?.category !== undefined
-                          ? `${getCategoryClass(tagData.category)} ${baseInteractive}`
-                          : `cat-badge bg-gray-100 dark:bg-slate-700 text-gray-800 dark:text-slate-300 ${baseInteractive}`;
+                          ? getCategoryClass(tagData.category)
+                          : 'cat-badge cat-default';
 
                         return (
                           <TagButton
@@ -402,14 +369,15 @@ const ImageModal: React.FC = () => {
 
                   {/* Source */}
                   <div>
-                    <h3 className="text-sm font-medium text-primary mb-1 lg:mb-2">Source</h3>
+                    <h3 className="mb-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">Source</h3>
                     <a
                       href={`https://danbooru.donmai.us/posts/${selectedPost.id}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-blue-600 dark:text-blue-400 hover:underline text-sm break-all"
+                      className="inline-flex items-center gap-1.5 text-sm text-primary-text underline decoration-primary-text/40 underline-offset-[3px] hover:decoration-primary-text"
                     >
-                      View on Danbooru
+                      {t('tags.viewOnDanbooru')}
+                      <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
                     </a>
 
                   </div>
@@ -417,8 +385,8 @@ const ImageModal: React.FC = () => {
                   {/* Uploader */}
                   {selectedPost.uploader_name && (
                     <div>
-                      <h3 className="text-sm font-medium text-primary mb-1 lg:mb-2">Uploader</h3>
-                      <div className="text-sm text-secondary">
+                      <h3 className="mb-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">Uploader</h3>
+                      <div className="text-sm">
                         {selectedPost.uploader_name}
                       </div>
                     </div>
@@ -427,7 +395,7 @@ const ImageModal: React.FC = () => {
               </div>
             </>
           ) : (
-            <div className="flex items-center justify-center w-full text-gray-500 dark:text-slate-400">
+            <div className="flex w-full items-center justify-center text-muted-foreground">
               No post selected
             </div>
           )}
@@ -445,7 +413,7 @@ const ImageModal: React.FC = () => {
             zIndex: zIndex + 1000
           }}
         >
-          <div className="bg-green-600 text-white px-3 py-2 rounded-lg shadow-lg text-sm font-medium animate-pulse">
+          <div className="copy-bubble">
             {copyFeedback.text}
           </div>
         </div>
@@ -536,7 +504,7 @@ const TagButton: React.FC<TagButtonProps> = ({ tag, categoryClass, onLeftClick, 
 
   return (
     <button
-      className={`inline-flex items-center px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md text-[11px] sm:text-xs leading-tight font-medium whitespace-nowrap transition-colors duration-150 ${categoryClass} ${isLongPressing ? 'ring-2 ring-accent' : ''}`}
+      className={`${categoryClass} whitespace-nowrap ${isLongPressing ? 'ring-2 ring-ring' : ''}`}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       onMouseDown={handleMouseDown}

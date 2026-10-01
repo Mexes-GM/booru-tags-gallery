@@ -3,14 +3,12 @@ import { useTranslation } from 'react-i18next';
 import { 
   copyToClipboard, 
   showCopyFeedbackBubble, 
-  getCategoryClass, 
   highlightShortMatch 
 } from '../utils';
 import { DanbooruTag } from '../types';
 import { APP_CONFIG, ASPECT_RATIOS } from '../config/appConfig';
-import useHoverEffects from '../hooks/useHoverEffects';
 import useIntersectionObserver from '../hooks/useIntersectionObserver';
-import LoadingSpinner from './common/LoadingSpinner';
+import { Layers } from 'lucide-react';
 
 interface TagGroupCardProps {
   tag: DanbooruTag;
@@ -41,18 +39,8 @@ const TagGroupCard: React.FC<TagGroupCardProps> = ({ tag, searchTerm = '', isTra
     const effective = translatedTerm && lastTranslatedFor === searchTerm ? translatedTerm : searchTerm;
     return highlightShortMatch(title, effective);
   }, [title, searchTerm, translatedTerm, lastTranslatedFor]);
-  const categoryClass = useMemo(() => getCategoryClass(tag.category), [tag.category]);
   // For tag groups we override the category label to a custom one instead of the generic category name (e.g. Meta)
   const categoryName = useMemo(() => t('ui.tagGroup'), [t]);
-
-  const cardHoverEffects = useHoverEffects({
-    baseClasses: 'group block bg-[var(--color-searchcard)] dark:bg-[var(--color-searchcard)] rounded-2xl shadow-sm border border-subtle overflow-hidden transition-all duration-200 ease-in-out will-change-transform',
-    customHoverClasses: 'hover:shadow-xl hover:border-gray-200 dark:hover:border-gray-600 hover:-translate-y-1 hover:scale-[1.01]',
-    scale: false,
-    lift: true,
-    glow: true,
-    transitionDuration: 'fast'
-  });
 
   const handleClick = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -79,9 +67,9 @@ const TagGroupCard: React.FC<TagGroupCardProps> = ({ tag, searchTerm = '', isTra
     
     // Agregar efecto visual temporal a la tarjeta
     const cardElement = e.currentTarget as HTMLElement;
-    cardElement.classList.add('ring-2', success ? 'ring-green-400' : 'ring-red-400');
+    cardElement.classList.add('ring-2', success ? 'ring-primary' : 'ring-destructive');
     setTimeout(() => {
-      cardElement.classList.remove('ring-2', 'ring-green-400', 'ring-red-400');
+      cardElement.classList.remove('ring-2', 'ring-primary', 'ring-destructive');
     }, 700);
   }, [tag.name, t]);
 
@@ -93,10 +81,9 @@ const TagGroupCard: React.FC<TagGroupCardProps> = ({ tag, searchTerm = '', isTra
   const ok = await copyToClipboard(text);
   showCopyFeedbackBubble(ok ? t('clipboard.copySuccess') : t('clipboard.copyFail'), e.clientX, e.clientY, ok);
     const el = e.currentTarget as HTMLElement;
-    el.classList.add('ring-2', ok ? 'ring-green-400' : 'ring-red-400');
-    setTimeout(()=> el.classList.remove('ring-2','ring-green-400','ring-red-400'),700);
-    // Silently handle copy failure
-  }, []);
+    el.classList.add('ring-2', ok ? 'ring-primary' : 'ring-destructive');
+    setTimeout(()=> el.classList.remove('ring-2','ring-primary','ring-destructive'),700);
+  }, [t]);
 
   // Long press móvil reutilizable
   const groupLongPressTimer = useRef<number | null>(null);
@@ -161,87 +148,93 @@ const TagGroupCard: React.FC<TagGroupCardProps> = ({ tag, searchTerm = '', isTra
     load();
   }, [isIntersecting, tag.name]);
 
+  const members = Array.isArray(tag.words) ? tag.words.slice(1) : [];
+  const cleanWord = (w: string) => w.replace(/^tag_group:/, '');
+  const remaining = members.slice(5).map(w => cleanWord(w).replace(/_/g, ' ')).join(', ');
+
+  const groupChip = (
+    <span
+      className="inline-flex items-center gap-1.5 rounded-lg bg-overlay/60 px-1.5 py-0.5 text-xs font-medium text-overlay-foreground/90 shadow-sm"
+      title={t('ui.rightClickLongPressCopyCategory')}
+      onContextMenu={(e) => handleBadgeCopy(e, categoryName)}
+      onTouchStart={touchStartHandler(categoryName)}
+      onTouchEnd={touchEndHandler}
+    >
+      <span className="cat-dot cat-group" aria-hidden="true" />
+      {categoryName}
+    </span>
+  );
+
   return (
-    <div ref={cardRef} className={`${cardHoverEffects.hoverClasses} ${isTransitioning ? 'opacity-40 blur-sm' : ''} cursor-pointer`} onClick={handleClick} onContextMenu={handleRightClick} onMouseEnter={cardHoverEffects.handleMouseEnter} onMouseLeave={cardHoverEffects.handleMouseLeave}>
+    <div
+      ref={cardRef}
+      role="button"
+      tabIndex={0}
+      className={`group relative flex h-full cursor-pointer flex-col overflow-hidden rounded-xl bg-card text-card-foreground outline-none transition-[transform,box-shadow,opacity] duration-200 ease-out-expo hover:-translate-y-1 hover:shadow-[0_10px_15px_-3px_color-mix(in_oklab,var(--primary)_8%,transparent),0_4px_6px_-2px_color-mix(in_oklab,var(--primary)_6%,transparent)] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:hover:translate-y-0 ${isTransitioning ? 'opacity-50' : ''}`}
+      onClick={handleClick}
+      onContextMenu={handleRightClick}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onTagClick?.(tag);
+        }
+      }}
+    >
       {!isInTagGroupsContext && (
-        /* Placeholder / media section like TagCard */
-        <div className={`relative w-full ${aspectConfig.cardHeight} rounded-b-none rounded-2xl overflow-hidden bg-gradient-to-br from-[var(--color-surface-alt)] to-[var(--color-elevated)] dark:from-[var(--color-surface-alt)] dark:to-[var(--color-elevated)] flex items-center justify-center`}>        
-          <span className="select-none text-[11px] sm:text-xs tracking-wide font-semibold text-subtle dark:text-secondary uppercase">{t('ui.tagGroup')}</span>
-          {/* Badges (overlay) */}
-          <div className="absolute top-2 sm:top-3 left-2 sm:left-3 flex gap-1 z-20">
-            <span
-              className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs font-semibold shadow-sm cursor-pointer ${categoryClass}`}
-              title={t('tooltips.rightClickLongPressCopyCategory')}
-              onContextMenu={(e)=>handleBadgeCopy(e, categoryName)}
-              onTouchStart={touchStartHandler(categoryName)}
-              onTouchEnd={touchEndHandler}
-            >{categoryName}</span>
-          </div>
+        <div className={`relative flex w-full ${aspectConfig.cardHeight} items-center justify-center bg-muted`}>
+          <Layers className="h-8 w-8 text-muted-foreground/50" strokeWidth={1.5} aria-hidden="true" />
+          <div className="absolute left-2 top-2 z-20">{groupChip}</div>
         </div>
       )}
-      {/* Content section */}
-      <div className="p-3 sm:p-4">
+
+      <div className="flex flex-1 flex-col gap-2 p-3">
         {isInTagGroupsContext && (
-          /* Header with category badge for tag groups context */
-          <div className="flex items-start justify-between mb-3">
-            <span
-              className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs font-semibold shadow-sm cursor-pointer ${categoryClass}`}
-              title={t('tooltips.rightClickLongPressCopyCategory')}
-              onContextMenu={(e)=>handleBadgeCopy(e, categoryName)}
-              onTouchStart={touchStartHandler(categoryName)}
-              onTouchEnd={touchEndHandler}
-            >{categoryName}</span>
+          <div className="flex">
+            <span className="cat-badge cat-group">{categoryName}</span>
           </div>
         )}
-  <h3 className="font-bold text-base sm:text-lg text-primary mb-2 line-clamp-2">{highlightedTitle}</h3>
-  {/* (Se eliminó el contador de miembros) */}
-        {/* Alias chips (excluding first which is group title) */}
-        {Array.isArray(tag.words) && tag.words.length > 1 && (
-          <div className="mb-2">
-            <div className="flex flex-wrap gap-1">
-              {tag.words.slice(1, 6).map((word, idx) => (
-                <span
-                  key={idx}
-                  className="px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md text-xs cursor-pointer bg-surface-alt dark:bg-elevated text-secondary"
-                  title={t('tooltips.rightClickLongPressCopy')}
-                  onContextMenu={(e)=>handleBadgeCopy(e, word.replace(/^tag_group:/,''))}
-                  onTouchStart={touchStartHandler(word.replace(/^tag_group:/,''))}
-                  onTouchEnd={touchEndHandler}
-                >
-                  {word.replace(/^tag_group:/,'').replace(/_/g,' ')}
-                </span>
-              ))}
-              {tag.words.length > 6 && (
-                <span
-                  className="px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md text-xs cursor-pointer accent-bg"
-                  title={t('tooltips.rightClickLongPressCopyRemaining')}
-                  onContextMenu={(e)=>handleBadgeCopy(e, tag.words.slice(6).map(w=>w.replace(/^tag_group:/,'').replace(/_/g,' ')).join(', '))}
-                  onTouchStart={touchStartHandler(tag.words.slice(6).map(w=>w.replace(/^tag_group:/,'').replace(/_/g,' ')).join(', '))}
-                  onTouchEnd={touchEndHandler}
-                >+{tag.words.length - 6}</span>
-              )}
+        <h3 className="line-clamp-2 text-sm font-medium capitalize leading-snug">{highlightedTitle}</h3>
+
+        {members.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {members.slice(0, 5).map((word, idx) => (
+              <span
+                key={idx}
+                className="cat-badge cat-default"
+                title={t('ui.rightClickLongPressCopy')}
+                onContextMenu={(e) => handleBadgeCopy(e, cleanWord(word))}
+                onTouchStart={touchStartHandler(cleanWord(word))}
+                onTouchEnd={touchEndHandler}
+              >
+                {cleanWord(word).replace(/_/g, ' ')}
+              </span>
+            ))}
+            {members.length > 5 && (
+              <span
+                className="cat-badge cat-default font-mono tabular-nums"
+                title={t('ui.rightClickLongPressCopyRemaining')}
+                onContextMenu={(e) => handleBadgeCopy(e, remaining)}
+                onTouchStart={touchStartHandler(remaining)}
+                onTouchEnd={touchEndHandler}
+              >
+                +{members.length - 5}
+              </span>
+            )}
+          </div>
+        )}
+
+        <div className="mt-auto rounded-lg bg-muted/50 p-2">
+          {loading ? (
+            <div className="space-y-1.5 py-0.5" aria-label={t('common.loading')}>
+              <div className="h-2.5 w-full animate-pulse rounded bg-muted" />
+              <div className="h-2.5 w-4/5 animate-pulse rounded bg-muted" />
             </div>
-          </div>
-        )}
-        {/* Wiki excerpt box aligned to TagCard style */}
-        {loading ? (
-          <div className="mb-2 p-2 sm:p-3 bg-surface-alt dark:bg-elevated rounded-lg">
-            <div className="flex items-center gap-1.5 sm:gap-2 text-subtle">
-              <LoadingSpinner size="sm" />
-              <span className="text-xs">{t('common.loading')}</span>
-            </div>
-          </div>
-        ) : wikiHtml ? (
-          <div className="mb-2 p-2 sm:p-3 bg-surface-alt dark:bg-elevated rounded-lg border-l-4 accent border-transparent">
-            <div className="text-xs accent font-medium mb-1">Wiki</div>
-            <div className="text-xs sm:text-sm text-secondary leading-relaxed prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: wikiHtml }} />
-          </div>
-        ) : (
-          <div className="mb-2 p-2 sm:p-3 bg-surface-alt dark:bg-elevated rounded-lg border-l-4 border-subtle">
-            <div className="text-xs text-secondary font-medium mb-1">Wiki</div>
-            <div className="text-xs sm:text-sm text-subtle italic">{t('ui.noDescription')}</div>
-          </div>
-        )}
+          ) : wikiHtml ? (
+            <div className="wiki-prose line-clamp-3 text-xs leading-relaxed text-muted-foreground" dangerouslySetInnerHTML={{ __html: wikiHtml }} />
+          ) : (
+            <p className="text-xs italic text-muted-foreground">{t('ui.noDescription')}</p>
+          )}
+        </div>
       </div>
     </div>
   );

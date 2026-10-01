@@ -7,7 +7,7 @@ export class WorkerManager<T = unknown> {
   private worker: Worker;
   private messageHandlers: Map<string, Set<MessageHandler>> = new Map();
   private requestCounter = 0;
-  private pendingRequests: Map<string, (data: T) => void> = new Map();
+  private pendingRequests: Map<string, { resolve: (data: T) => void; reject: (error: Error) => void }> = new Map();
 
   /**
    * @param worker The worker instance to manage.
@@ -23,9 +23,14 @@ export class WorkerManager<T = unknown> {
 
     // Handle responses to specific requests
     if (requestId && this.pendingRequests.has(requestId)) {
-      const resolve = this.pendingRequests.get(requestId)!;
+      const pending = this.pendingRequests.get(requestId)!;
       this.pendingRequests.delete(requestId);
-      resolve(payload as T);
+      if (type === 'ERROR') {
+        const info = payload as unknown as { message?: string; error?: string } | undefined;
+        pending.reject(new Error([info?.message, info?.error].filter(Boolean).join(': ') || 'Worker error'));
+      } else {
+        pending.resolve(payload as T);
+      }
       return;
     }
 
@@ -58,17 +63,22 @@ export class WorkerManager<T = unknown> {
     const requestId = `req_${this.requestCounter++}`;
     
     return new Promise<K>((resolve, reject) => {
+      // Generous timeout: the first request waits for tags.json to download in the worker.
       const timeoutId = setTimeout(() => {
         this.pendingRequests.delete(requestId);
-        reject(new Error(`Worker request timed out after 30s for type '${type}'`));
-      }, 30000);
+        reject(new Error(`Worker request timed out after 60s for type '${type}'`));
+      }, 60000);
 
-      const resolver = (data: T) => {
-        clearTimeout(timeoutId);
-        resolve(data as unknown as K);
-      };
-
-      this.pendingRequests.set(requestId, resolver);
+      this.pendingRequests.set(requestId, {
+        resolve: (data: T) => {
+          clearTimeout(timeoutId);
+          resolve(data as unknown as K);
+        },
+        reject: (error: Error) => {
+          clearTimeout(timeoutId);
+          reject(error);
+        }
+      });
       
       try {
         this.worker.postMessage({ type, payload, requestId }, transfer);
@@ -106,12 +116,8 @@ export class WorkerManager<T = unknown> {
     this.worker.terminate();
     this.messageHandlers.clear();
     
-    const pendingCount = this.pendingRequests.size;
-    if (pendingCount > 0) {
-      this.pendingRequests.forEach((_, requestId) => {
-        this.pendingRequests.delete(requestId);
-      });
-    }
+    this.pendingRequests.forEach(pending => pending.reject(new Error('Worker terminated')));
+    this.pendingRequests.clear();
   }
 
   /**

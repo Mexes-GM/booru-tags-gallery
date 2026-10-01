@@ -43,8 +43,8 @@
     "noSuggestionsFound": "No se encontraron sugerencias",
     "clear": "Limpiar búsqueda",
     "loadingWorker": "Cargando motor de búsqueda...",
-  "autoTranslate": "Traducir Entrada",
-  "aliasResolver": "Resolver Alias",
+    "autoTranslate": "Traducir Entrada",
+    "aliasResolver": "Resolver Alias",
     "didYouMean": "¿Quisiste decir?",
     "closeSuggestion": "Cerrar sugerencia",
     "inputLanguage": "Idioma de Entrada",
@@ -53,7 +53,7 @@
     "searching": "Buscando:",
     "in": "en",
     "results": "resultados",
-  "result": "resultado",
+    "result": "resultado",
     "loading": "cargando…",
     "translating": "Traduciendo…",
     "translationOf": "Traducción de",
@@ -69,13 +69,19 @@
     },
     "startTyping": "Comienza a escribir para buscar tags...",
     "exploreTags": "Explorar tags",
-  "tooltips": {
+    "tooltips": {
       "aliasResolver": "Si está activo, los alias que escribes se convierten automáticamente al nombre canónico antes de buscar.",
       "autoTranslate": "Traduce lo que escribes desde el idioma seleccionado al inglés.",
       "inputLanguage": "Selecciona el idioma en el que vas a escribir para obtener traducciones más precisas.",
       "category": "Filtra resultados por la categoría de tags {{category}}."
-  },
-  "enableAutoTranslateFirst": "Activa la traducción automática para cambiar el idioma"
+    },
+    "enableAutoTranslateFirst": "Activa la traducción automática para cambiar el idioma",
+    "options": "Opciones",
+    "promptFilter": "Prompt",
+    "promptFilterTitle": "Filtra tags General por categoría de prompt (de Booru Prompt Gallery)",
+    "allInGroup": "Todo {{group}}",
+    "clearPromptFilter": "Quitar filtro de prompt",
+    "promptFilterUnavailable": "Las categorías de prompt solo aplican a tags General"
   },
   "tags": {
     "postCount": "{{count}} posts",
@@ -101,7 +107,9 @@
     "disabled": "Deshabilitado",
     "blocked": "Contenido bloqueado por filtro NSFW",
     "blockedDescription": "Este contenido ha sido bloqueado por el filtro de contenido sensible. Puedes deshabilitar el filtro en la configuración para ver este contenido.",
-    "toggleFilter": "Alternar filtro NSFW"
+    "toggleFilter": "Alternar filtro NSFW",
+    "short": "NSFW",
+    "switchTitle": "Mostrar contenido sensible en las vistas previas"
   },
   "homepage": {
     "title": "Booru Tag Gallery",
@@ -119,7 +127,15 @@
     "rateLimitTitle": "Límite de velocidad alcanzado",
     "rateLimitDescription": "La API de Danbooru ha limitado las solicitudes para proteger el servidor.",
     "rateLimitReset": "Se reinicia en ~{{minutes}} minutos",
-    "lowRateLimit": "Pocas solicitudes restantes ({{remaining}}/{{limit}})"
+    "lowRateLimit": "Pocas solicitudes restantes ({{remaining}}/{{limit}})",
+    "tagline": "Encuentra el tag exacto en segundos — con su wiki, alias y posts reales, listo para copiar.",
+    "by": "Por Mexes",
+    "howTo": {
+      "title": "Cómo funciona",
+      "search": "Escribe un tag, alias o palabra en tu idioma",
+      "open": "Abre una tarjeta para ver su wiki y posts",
+      "copy": "Copia, o clic derecho / mantén pulsado cualquier tag"
+    }
   },
   "modal": {
     "close": "Cerrar modal",
@@ -132,9 +148,9 @@
     "notFound": "No encontrado",
     "serverError": "Error del servidor",
     "unknown": "Error desconocido",
-  "retryMessage": "Intenta de nuevo en unos momentos",
-  "wikiLoadFailed": "No se pudo cargar la información del wiki.",
-  "galleryLoadFailed": "No se pudo cargar la galería de imágenes."
+    "retryMessage": "Intenta de nuevo en unos momentos",
+    "wikiLoadFailed": "No se pudo cargar la información del wiki.",
+    "galleryLoadFailed": "No se pudo cargar la galería de imágenes."
   },
   "settings": {
     "title": "Configuración",
@@ -151,7 +167,8 @@
     "imageQuality": "Calidad de imagen",
     "imageQualityHigh": "Alta",
     "imageQualityMedium": "Media",
-    "imageQualityLow": "Baja"
+    "imageQualityLow": "Baja",
+    "toggleTheme": "Cambiar tema claro / oscuro"
   },
   "footer": {
     "poweredBy": "Desarrollado con",
@@ -160,15 +177,25 @@
     "github": "Código fuente"
   },
   "ui": {
-  "tagGroup": "Grupo de etiquetas",
-  "noDescription": "Sin descripción",
-  "moreOfMyWorkHere": "Más de mi trabajo aquí",
-  "copyAllTags": "Copiar todos los tags",
-  "copy": "Copiar",
-  "scrollToTop": "Volver al inicio",
-  "visitOn": "Visitar {{name}} en {{platform}}",
-  "supportOnKofi": "Apóyame en Ko-fi",
-  "tagButtonTooltip": "Click: abrir tag | Click derecho / Long press: copiar \"{{tag}}\""
+    "tagGroup": "Grupo de etiquetas",
+    "noDescription": "Sin descripción",
+    "moreOfMyWorkHere": "Más de mi trabajo aquí",
+    "copyAllTags": "Copiar todos los tags",
+    "copy": "Copiar",
+    "scrollToTop": "Volver al inicio",
+    "visitOn": "Visitar {{name}} en {{platform}}",
+    "supportOnKofi": "Apóyame en Ko-fi",
+    "tagButtonTooltip": "Click: abrir tag | Click derecho / Long press: copiar \"{{tag}}\"",
+    "copied": "¡Copiado!",
+    "copyTag": "Copiar tag",
+    "support": "Apoyar",
+    "container": "Contenedor",
+    "openTag": "Abrir tag",
+    "wordmark": "Booru Tag Gallery",
+    "rightClickCopyCategory": "Clic derecho: copiar categoría",
+    "rightClickLongPressCopy": "Clic derecho / mantener pulsado: copiar",
+    "rightClickLongPressCopyCategory": "Clic derecho / mantener pulsado: copiar categoría",
+    "rightClickLongPressCopyRemaining": "Clic derecho / mantener pulsado: copiar el resto"
   },
   "post": "Post #",
   "nsfwImage": "Imagen NSFW",
@@ -189,11 +216,54 @@
   },
   "gallery": {
     "noPosts": "No hay posts disponibles",
-    "noPostsDescription": "No se encontraron post para este tag"
-  }
-  ,
+    "noPostsDescription": "No se encontraron post para este tag",
+    "nsfwBlocked_one": "{{count}} post oculto por el filtro NSFW",
+    "nsfwBlocked_other": "{{count}} posts ocultos por el filtro NSFW"
+  },
   "clipboard": {
     "copySuccess": "Texto copiado",
     "copyFail": "Fallo al copiar"
+  },
+  "promptTaxonomy": {
+    "groups": {
+      "appearance": "Apariencia",
+      "clothing": "Ropa",
+      "pose": "Pose",
+      "equipment": "Equipo",
+      "scenery": "Escenario",
+      "creature": "Criaturas",
+      "style": "Estilo"
+    },
+    "subs": {
+      "anatomy": "Anatomía",
+      "hair": "Pelo",
+      "eyes": "Ojos",
+      "demographics": "Demografía",
+      "physiological": "Fisiológico",
+      "interaction": "Interacción",
+      "posture": "Postura",
+      "gesture": "Gestos",
+      "expression": "Expresión",
+      "kinetic": "Movimiento",
+      "combat": "Combate",
+      "camera": "Cámara",
+      "accents": "Accesorios",
+      "outfit": "Conjuntos",
+      "top": "Parte superior",
+      "headwear": "Tocados",
+      "underwear": "Ropa interior",
+      "bottom": "Parte inferior",
+      "legwear": "Medias",
+      "footwear": "Calzado",
+      "eyewear": "Gafas",
+      "props": "Objetos",
+      "setting": "Ambiente",
+      "atmosphere": "Atmósfera",
+      "style": "Estilo artístico",
+      "layout": "Composición",
+      "handheld": "En la mano",
+      "weapon": "Armas",
+      "animal": "Animales"
+    }
   }
 }

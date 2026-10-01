@@ -256,7 +256,7 @@ function highlightSimilarParts(
  * Usa algoritmo de similitud de caracteres para encontrar partes similares
  */
 export const highlightShortMatch = (text: string, searchTerm: string): string | React.ReactNode => {
-  return highlightSimilarParts(text, searchTerm, 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-200 px-1 rounded font-medium');
+  return highlightSimilarParts(text, searchTerm, 'search-hit');
 }
 
 /**
@@ -264,5 +264,5 @@ export const highlightShortMatch = (text: string, searchTerm: string): string | 
  * Usa algoritmo de similitud de caracteres para encontrar partes similares
  */
 export const highlightSearchMatch = (text: string, searchTerm: string): string | React.ReactNode => {
-  return highlightSimilarParts(text, searchTerm, 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-200 px-1 rounded font-medium');
+  return highlightSimilarParts(text, searchTerm, 'search-hit');
 }

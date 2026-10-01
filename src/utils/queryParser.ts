@@ -5,13 +5,13 @@ export interface ParsedQuery {
   excludes: string[]; // -token
   category?: string;
   aliasLookup?: string; // alias:term
-  debug?: Record<string, any>;
+  debug?: Record<string, unknown>;
 }
 
 const CATEGORY_KEYS = ['general','artist','copyright','character','meta','tag_groups'];
 
 export function parseQuery(q: string): ParsedQuery {
-  const debug: Record<string,any> = {};
+  const debug: Record<string, unknown> = {};
   const includes: string[] = [];
   const phrases: string[] = [];
   const excludes: string[] = [];

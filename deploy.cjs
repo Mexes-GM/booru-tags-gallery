@@ -33,9 +33,9 @@ const steps = [
     description: 'Ejecutando verificaciones de pre-producción'
   },
   {
-    name: 'Optimización de rendimiento',
-    command: 'npm run optimize',
-    description: 'Optimizando aplicación para producción'
+    name: 'Tests',
+    command: 'npm test',
+    description: 'Ejecutando tests'
   },
   {
     name: 'Generación de índice Fuse',

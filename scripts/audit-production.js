@@ -5,9 +5,13 @@
  * Performs comprehensive performance and quality audits
  */
 
-const fs = require('fs');
-const path = require('path');
-const { execSync } = require('child_process');
+import fs from 'fs';
+import path from 'path';
+import { execSync } from 'child_process';
+import { fileURLToPath } from 'url';
+
+// package.json has "type": "module", so this script must be ESM
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const AUDIT_RESULTS_DIR = path.join(__dirname, '..', 'audit-results');
 const DIST_DIR = path.join(__dirname, '..', 'dist');
@@ -209,7 +213,7 @@ function checkDependencies() {
           log('✅ No known vulnerabilities found', 'green');
         }
       }
-    } catch (error) {
+    } catch {
       log('⚠️  Could not run security audit', 'yellow');
     }
 
@@ -228,7 +232,7 @@ function checkBuildConfiguration() {
     'tsconfig.json',
     'package.json',
     'vercel.json',
-    'public/_headers'
+    'netlify.toml'
   ];
 
   const existingConfigs = [];
@@ -257,9 +261,9 @@ function checkBuildConfiguration() {
     
     const checks = [
       { name: 'Minification enabled', pattern: /minify.*true|minify.*['"]terser['"]/, found: false },
-      { name: 'Code splitting configured', pattern: /rollupOptions.*output.*manualChunks/, found: false },
-      { name: 'Image optimization', pattern: /viteImagemin|imagemin/, found: false },
-      { name: 'Bundle analyzer', pattern: /rollup-plugin-analyzer|vite-bundle-analyzer/, found: false }
+      { name: 'Code splitting configured', pattern: /manualChunks/, found: false },
+      { name: 'PWA / service worker (vite-plugin-pwa)', pattern: /VitePWA[(]/, found: false },
+      { name: 'Bundle analyzer', pattern: /rollup-plugin-visualizer|rollup-plugin-analyzer|vite-bundle-analyzer/, found: false }
     ];
 
     checks.forEach(check => {
@@ -417,11 +421,11 @@ function main() {
   }
 }
 
-if (require.main === module) {
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   main();
 }
 
-module.exports = {
+export {
   analyzeBundle,
   checkDependencies,
   checkBuildConfiguration,

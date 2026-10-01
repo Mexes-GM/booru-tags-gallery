@@ -1,5 +1,4 @@
 import { DanbooruPost } from '../types';
-import { cacheImage } from '../utils/aggressiveCache'
 import { AGGRESSIVE_CACHE_CONFIG } from '../config/aggressiveCacheConfig'
 
 interface PreloadCache {
@@ -16,8 +15,9 @@ interface PreloadCache {
 class ImagePreloadService {
   private preloadCache = new Map<string, PreloadCache>()
   private loadingPromises = new Map<string, Promise<string[]>>()
-  private maxCacheAge = AGGRESSIVE_CACHE_CONFIG.CACHE_DURATIONS.IMAGE_METADATA // 7 días
-  // Cache size is now managed by the aggressive cache system
+  private maxCacheAge = AGGRESSIVE_CACHE_CONFIG.CACHE_DURATIONS.IMAGE_METADATA
+  // URL lists are derived from wiki pages + posts, which danbooruApi already
+  // caches (memory + IndexedDB), so this layer is memory-only.
 
   /**
    * Obtiene todas las URLs de imágenes de ejemplos para un tag con caché agresivo
@@ -25,21 +25,12 @@ class ImagePreloadService {
   async getWikiExampleUrls(
     tagName: string, 
     aspectRatio: number | null = null,
-    searchParams?: Record<string, any>
+    searchParams?: Record<string, unknown>
   ): Promise<string[]> {
     const cacheKey = this.getCacheKey(tagName, aspectRatio, searchParams)
     
-    // Verificar caché agresivo primero
-    const aggressiveCached = cacheImage.get<string[]>(`wiki_examples_${cacheKey}`);
-    if (aggressiveCached) {
-      return aggressiveCached;
-    }
-    
-    // Verificar cache local
     const cached = this.preloadCache.get(cacheKey)
     if (cached && Date.now() - cached.timestamp < this.maxCacheAge) {
-      // Guardar en caché agresivo para futuras consultas
-      cacheImage.set(`wiki_examples_${cacheKey}`, cached.imageUrls, AGGRESSIVE_CACHE_CONFIG.CACHE_DURATIONS.PREVIEW_IMAGES);
       return cached.imageUrls
     }
 
@@ -68,7 +59,7 @@ class ImagePreloadService {
   private async loadWikiExampleUrls(
     tagName: string, 
     aspectRatio: number | null = null,
-    searchParams?: Record<string, any>
+    searchParams?: Record<string, unknown>
   ): Promise<string[]> {
     try {
       // Obtener información de la wiki
@@ -107,6 +98,7 @@ class ImagePreloadService {
 
       // Extraer URLs de imágenes
       const imageUrls = filteredPosts
+        .filter((post: DanbooruPost) => !['mp4', 'webm', 'zip', 'swf'].includes(post.file_ext))
         .map((post: DanbooruPost) => post.large_file_url || post.file_url)
         .filter((url: string | undefined): url is string => url !== undefined && url.trim() !== '')
 
@@ -119,12 +111,10 @@ class ImagePreloadService {
         timestamp: Date.now(),
         loadedCount: 0
       })
-      
-      // Guardar en caché agresivo para persistencia de 7 días
-      cacheImage.set(`wiki_examples_${cacheKey}`, imageUrls, AGGRESSIVE_CACHE_CONFIG.CACHE_DURATIONS.PREVIEW_IMAGES);
+
 
       return imageUrls
-    } catch (error) {
+    } catch {
       return []
     }
   }
@@ -137,7 +127,7 @@ class ImagePreloadService {
     currentIndex: number,
     count: number = 3,
     aspectRatio: number | null = null,
-    searchParams?: Record<string, any>
+    searchParams?: Record<string, unknown>
   ): Promise<string[]> {
     const allUrls = await this.getWikiExampleUrls(tagName, aspectRatio, searchParams)
     if (allUrls.length === 0) return []
@@ -159,7 +149,7 @@ class ImagePreloadService {
     currentIndex: number,
     count: number = 3,
     aspectRatio: number | null = null,
-    searchParams?: Record<string, any>
+    searchParams?: Record<string, unknown>
   ): Promise<boolean> {
     const nextUrls = await this.preloadNextImages(tagName, currentIndex, count, aspectRatio, searchParams)
     if (nextUrls.length === 0) return true
@@ -225,7 +215,7 @@ class ImagePreloadService {
   /**
    * Obtiene estadísticas del cache de precarga
    */
-  getPreloadStats(): Record<string, any> {
+  getPreloadStats(): Record<string, unknown> {
     const stats = {
       totalCachedTags: this.preloadCache.size,
       totalLoadingPromises: this.loadingPromises.size,
@@ -277,7 +267,7 @@ class ImagePreloadService {
   /**
    * Genera una clave de cache única
    */
-  private getCacheKey(tagName: string, aspectRatio: number | null, searchParams?: Record<string, any>): string {
+  private getCacheKey(tagName: string, aspectRatio: number | null, searchParams?: Record<string, unknown>): string {
     const normalizedTagName = tagName.trim().replace(/\s+/g, '_')
     const aspectKey = aspectRatio ? `_${aspectRatio}` : '_any'
     const searchParamKey = searchParams ? `_${JSON.stringify(searchParams)}` : ''

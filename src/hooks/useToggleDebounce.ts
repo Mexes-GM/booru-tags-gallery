@@ -2,7 +2,7 @@ import { useRef, useCallback, useEffect, useState } from 'react';
 
 interface UseToggleDebounceReturn {
   isToggling: boolean;
-  toggle: (toggleFunction: () => any) => boolean | (() => void);
+  toggle: (toggleFunction: () => unknown) => boolean | (() => void);
   reset: () => void;
 }
 
@@ -10,7 +10,7 @@ export function useToggleDebounce(delay: number = 1000): UseToggleDebounceReturn
   const [isToggling, setIsToggling] = useState<boolean>(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const toggle = useCallback((toggleFunction: () => any): boolean | (() => void) => {
+  const toggle = useCallback((toggleFunction: () => unknown): boolean | (() => void) => {
     if (isToggling) {
       return false;
     }

@@ -1,7 +1,7 @@
 import React, { createContext, useState, useCallback, ReactNode, useEffect } from 'react';
 import { track } from '@vercel/analytics';
 import { DanbooruTag } from '../types';
-import { useModalZIndex } from './ModalZIndexContext';
+import { useModalZIndex } from './useModalZIndex';
 
 interface TagModalContextType {
   selectedTag: DanbooruTag | null;
@@ -150,7 +150,7 @@ export const TagModalProvider: React.FC<TagModalProviderProps> = ({ children }) 
       openModal(finalTag);
   try { track('tag_modal_fetch', { tag: normalizedTagName, fetched: Boolean(tagInfo) }); } catch {}
       
-    } catch (error) {
+    } catch {
       // Limpiar estado de error
       setPendingRequests(prev => {
         const newSet = new Set(prev);
@@ -176,7 +176,7 @@ export const TagModalProvider: React.FC<TagModalProviderProps> = ({ children }) 
     try {
       const leaveEvent = new CustomEvent('postBadgeLeave', { bubbles: true, cancelable: false });
       document.dispatchEvent(leaveEvent);
-    } catch (_) {
+    } catch {
       // ignorar
     }
     setIsModalOpen(false);

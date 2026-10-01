@@ -4,7 +4,14 @@
  * 
  * Basado en la documentación oficial de Danbooru DText:
  * https://deepwiki.com/danbooru/danbooru/7-text-processing
+ *
+ * SEGURIDAD: el texto de las wikis es editable por cualquier usuario (no confiable).
+ * 1) La entrada se escapa (& < >) antes de convertir DText a HTML.
+ * 2) Las URLs se validan (solo http(s), rutas relativas y anchors) y los atributos se escapan.
+ * 3) Todo HTML devuelto pasa por DOMPurify (sanitizeHtml) como última barrera.
  */
+
+import DOMPurify from 'dompurify';
 
 // ===== TIPOS Y INTERFACES =====
 
@@ -12,7 +19,6 @@ interface PostImageMap { [postId: number]: string; }
 interface DTextBlock { type: 'header' | 'list' | 'text'; content: string; }
 interface CutPoint { pattern: RegExp; preference: number; }
 interface CategoryPosts { [category: string]: number[]; }
-interface AllowedAttributes { [tagName: string]: string[]; }
 
 // ===== CONSTANTES Y CONFIGURACIÓN (restaurado tras refactor) =====
 const DTextConfig = {
@@ -27,43 +33,43 @@ const DTextConfig = {
   MIN_TRUNCATE_RATIO: 0.5,
   LAST_SPACE_RATIO: 0.7,
   CSS_CLASSES: {
-    LINK: 'underline accent hover:opacity-80',
-    TAG_LINK: 'cat-badge cat-default hover:opacity-80 transition-colors cursor-pointer mr-1',
-    WIKI_LINK: 'cat-badge cat-default hover:opacity-80 transition-colors cursor-pointer mr-1',
-    EXTERNAL_LINK: 'cat-badge cat-default hover:opacity-80 transition-colors cursor-pointer mr-1',
-    USER_MENTION: 'inline-block bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 px-2 py-1 rounded text-sm font-medium',
-    TAG_REQUEST: 'inline-block px-2 py-1 rounded text-xs font-medium mr-1',
+    LINK: 'underline decoration-primary-text/40 underline-offset-[3px] text-primary-text hover:decoration-primary-text',
+    TAG_LINK: 'cat-badge cat-default cursor-pointer mr-1',
+    WIKI_LINK: 'cat-badge cat-default cursor-pointer mr-1',
+    EXTERNAL_LINK: 'cat-badge cat-default cursor-pointer mr-1',
+    USER_MENTION: 'cat-badge cat-default',
+    TAG_REQUEST: 'cat-badge mr-1',
     SPOILER: 'spoiler-inline',
-    NOTE: 'text-xs bg-surface-alt dark:bg-surface-alt text-text-secondary dark:text-text-secondary px-1 rounded',
-    CODE_BLOCK: 'bg-surface-alt dark:bg-surface-alt border border-subtle dark:border-subtle rounded p-3 text-sm font-mono overflow-x-auto my-2 text-text-secondary dark:text-text-secondary',
-    QUOTE: 'border-l-4 border-subtle dark:border-subtle pl-4 italic text-text-secondary dark:text-text-secondary my-2',
-    LIST_ITEM: 'text-text-secondary dark:text-text-secondary text-sm whitespace-normal h-auto flex items-start leading-snug',
-    LIST_CONTAINER: 'flex flex-wrap gap-2 my-2 items-center',
-    MEDIA_GALLERY: 'media-gallery grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-4 h-full',
-    MEDIA_EMBED: 'dtext-media-embed flex flex-col bg-surface-alt dark:bg-surface rounded shadow overflow-hidden border border-subtle dark:border-subtle',
-    MEDIA_IMAGE: 'flex-1 flex items-center justify-center min-h-[120px] media-embed-image p-2 bg-surface-alt dark:bg-surface',
-    MEDIA_CAPTION: 'media-embed-caption mt-auto p-2 text-xs text-center text-text-subtle dark:text-text-subtle text-balance',
-    POST_BADGE: 'cat-badge cat-default hover:opacity-80 transition-colors cursor-pointer mr-1'
+    NOTE: 'text-xs bg-muted text-muted-foreground px-1 rounded',
+    CODE_BLOCK: 'bg-muted border border-border rounded-lg p-3 text-sm font-mono overflow-x-auto my-2 text-foreground',
+    QUOTE: 'border-l border-border pl-4 italic text-muted-foreground my-2',
+    LIST_ITEM: 'text-foreground/85 text-sm whitespace-normal h-auto flex items-start leading-snug',
+    LIST_CONTAINER: 'flex flex-wrap gap-1.5 my-2 items-center',
+    MEDIA_GALLERY: 'media-gallery grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mb-4 h-full',
+    MEDIA_EMBED: 'dtext-media-embed flex flex-col bg-card rounded-xl overflow-hidden',
+    MEDIA_IMAGE: 'flex-1 flex items-center justify-center min-h-[120px] media-embed-image p-2 bg-muted/50',
+    MEDIA_CAPTION: 'media-embed-caption mt-auto p-2 text-xs text-center text-muted-foreground text-balance',
+    POST_BADGE: 'cat-badge cat-default cursor-pointer mr-1 font-mono tabular-nums'
   },
   HEADERS: {
-    h1: { class: 'text-2xl font-bold mb-4 text-primary', pattern: /^h1(?:#([a-zA-Z0-9_\-]+))?\.\s+(.*)$/gm },
-    h2: { class: 'text-xl font-bold mb-3 text-primary', pattern: /^h2(?:#([a-zA-Z0-9_\-]+))?\.\s+(.*)$/gm },
-    h3: { class: 'text-lg font-bold mb-2 text-primary', pattern: /^h3(?:#([a-zA-Z0-9_\-]+))?\.\s+(.*)$/gm },
-    h4: { class: 'text-base font-bold mb-2 text-primary', pattern: /^h4(?:#([a-zA-Z0-9_\-]+))?\.\s+(.*)$/gm },
-    h5: { class: 'text-sm font-bold mb-1 text-primary', pattern: /^h5(?:#([a-zA-Z0-9_\-]+))?\.\s+(.*)$/gm },
-    h6: { class: 'text-xs font-bold mb-1 text-primary', pattern: /^h6(?:#([a-zA-Z0-9_\-]+))?\.\s+(.*)$/gm }
+    h1: { class: 'text-xl font-semibold tracking-tight mb-3 text-foreground', pattern: /^h1(?:#([a-zA-Z0-9_\-]+))?\.\s+(.*)$/gm },
+    h2: { class: 'text-lg font-semibold tracking-tight mb-2 text-foreground', pattern: /^h2(?:#([a-zA-Z0-9_\-]+))?\.\s+(.*)$/gm },
+    h3: { class: 'text-base font-semibold mb-2 text-foreground', pattern: /^h3(?:#([a-zA-Z0-9_\-]+))?\.\s+(.*)$/gm },
+    h4: { class: 'text-sm font-semibold mt-4 mb-2 text-foreground', pattern: /^h4(?:#([a-zA-Z0-9_\-]+))?\.\s+(.*)$/gm },
+    h5: { class: 'text-sm font-semibold mb-1 text-foreground', pattern: /^h5(?:#([a-zA-Z0-9_\-]+))?\.\s+(.*)$/gm },
+    h6: { class: 'text-xs font-semibold mb-1 text-foreground', pattern: /^h6(?:#([a-zA-Z0-9_\-]+))?\.\s+(.*)$/gm }
   },
   FORMAT_TAGS: {
-    bold: { tag: 'strong', class: 'font-bold' },
+    bold: { tag: 'strong', class: 'font-semibold' },
     italic: { tag: 'em', class: 'italic' },
     underline: { tag: 'u', class: 'underline' },
     strikethrough: { tag: 's', class: 'line-through' },
-    translation: { tag: 'span', class: 'text-xs bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-1 rounded', title: 'Nota de traducción' }
+    translation: { tag: 'span', class: 'text-xs bg-muted text-muted-foreground px-1 rounded', title: 'Nota de traducción' }
   },
   REQUEST_TAGS: {
-    ta: { class: 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200', label: 'Tag Alias' },
-    ti: { class: 'bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200', label: 'Tag Implication' },
-    bur: { class: 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200', label: 'BUR' }
+    ta: { class: 'cat-general', label: 'Tag Alias' },
+    ti: { class: 'cat-meta', label: 'Tag Implication' },
+    bur: { class: 'cat-artist', label: 'BUR' }
   }
 } as const;
 
@@ -230,14 +236,74 @@ const validateStringInput = (input: unknown): input is string => {
   return typeof input === 'string' && input.length > 0;
 };
 
+// '&' que NO inicia una entidad ya existente (permite escapar de forma idempotente)
+const BARE_AMPERSAND = /&(?!(?:[a-zA-Z][a-zA-Z0-9]{1,31}|#\d{1,7}|#[xX][0-9a-fA-F]{1,6});)/g;
+
 /**
- * Escapa caracteres HTML básicos
+ * Escapa caracteres HTML básicos (idempotente: no re-escapa entidades existentes,
+ * por lo que es seguro aplicarlo sobre texto ya escapado)
  */
 const escapeHtml = (text: string): string => {
   return text
-    .replace(/&/g, '&amp;')
+    .replace(BARE_AMPERSAND, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
+};
+
+/**
+ * Escapa un valor para usarlo dentro de un atributo HTML entre comillas dobles
+ */
+const escapeAttr = (value: string): string => {
+  return escapeHtml(String(value))
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+};
+
+/**
+ * Decodifica entidades HTML numéricas y las básicas con nombre (para validar URLs
+ * tal y como las interpretará el navegador)
+ */
+const decodeEntitiesForUrlCheck = (value: string): string => {
+  return value
+    .replace(/&#[xX]([0-9a-fA-F]+);?/g, (_m, hex) => {
+      const cp = parseInt(hex, 16);
+      return cp > 0 && cp <= 0x10ffff ? String.fromCodePoint(cp) : '';
+    })
+    .replace(/&#(\d+);?/g, (_m, dec) => {
+      const cp = parseInt(dec, 10);
+      return cp > 0 && cp <= 0x10ffff ? String.fromCodePoint(cp) : '';
+    })
+    .replace(/&quot;?/gi, '"')
+    .replace(/&apos;?/gi, "'")
+    .replace(/&lt;?/gi, '<')
+    .replace(/&gt;?/gi, '>')
+    .replace(/&amp;?/gi, '&');
+};
+
+/**
+ * Valida un valor de URL YA DECODIFICADO (tal como lo ve el DOM).
+ * Permite: http:, https:, rutas relativas, '#anchor', '?query'. Rechaza cualquier otro esquema
+ * (javascript:, data:, vbscript:, etc.).
+ */
+const isAllowedUrlValue = (decoded: string): boolean => {
+  // Los navegadores ignoran espacios/controles al resolver el esquema → eliminarlos para validar
+  const v = decoded.replace(/[\u0000- \u007f-\u009f]/g, '');
+  if (v === '') return true;
+  if (/^https?:/i.test(v)) return true;
+  // Sin esquema: no debe haber ':' antes del primer '/', '?' o '#'
+  return !/^[^/?#]*:/.test(v);
+};
+
+/**
+ * Valida una URL tal como aparece en el HTML generado (puede contener entidades)
+ */
+const isSafeUrl = (url: string): boolean => {
+  if (typeof url !== 'string') return false;
+  const decoded = decodeEntitiesForUrlCheck(url);
+  if (/^\s*https?:/i.test(decoded)) return isAllowedUrlValue(decoded);
+  // URL no-http: rechazar si quedan entidades con nombre desconocidas (p.ej. &colon;)
+  if (/&[a-zA-Z]/.test(decoded)) return false;
+  return isAllowedUrlValue(decoded);
 };
 
 /**
@@ -314,7 +380,9 @@ const generateLinkMarker = (counter: number): string => `__LINK_${counter}__`;
  * Crea enlace HTML seguro
  */
 const createSafeLink = (url: string, text: string, className: string): string => {
-  return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="${className}">${text}</a>`;
+  // Esquema no permitido (javascript:, data:, ...) → solo texto, sin enlace
+  if (!isSafeUrl(url)) return escapeHtml(text);
+  return `<a href="${escapeAttr(url)}" target="_blank" rel="noopener noreferrer" class="${escapeAttr(className)}">${text}</a>`;
 };
 
 /**
@@ -323,13 +391,13 @@ const createSafeLink = (url: string, text: string, className: string): string =>
 const createTagLink = (tagName: string, displayName: string, className: string): string => {
   const normalizedName = tagName.trim().replace(/\s+/g, '_');
   // Usar data attributes en lugar de onclick inline para mayor compatibilidad
-  return `<a href="#" data-tag-name="${normalizedName}" class="${className} tag-link">${displayName}</a>`;
+  return `<a href="#" data-tag-name="${escapeAttr(normalizedName)}" class="${escapeAttr(className)} tag-link">${displayName}</a>`;
 };
 
 /**
  * Cache simple para operaciones costosas
  */
-const memoize = <T extends (...args: any[]) => any>(fn: T): T => {
+const memoize = <T extends (...args: never[]) => unknown>(fn: T): T => {
   const cache = new Map<string, ReturnType<T>>();
   
   return ((...args: Parameters<T>): ReturnType<T> => {
@@ -337,7 +405,7 @@ const memoize = <T extends (...args: any[]) => any>(fn: T): T => {
     if (cache.has(key)) {
       return cache.get(key)!;
     }
-    const result = fn(...args);
+    const result = fn(...args) as ReturnType<T>;
     cache.set(key, result);
     return result;
   }) as T;
@@ -389,7 +457,7 @@ const processTables = (content: string): string => {
       const cells = row.split('|').map(cell => `<td>${processLinks(cell.trim())}</td>`).join('');
       return `<tr>${cells}</tr>`;
     }).join('');
-    return `<table class="min-w-full border border-gray-300 my-2">${htmlRows}</table>`;
+    return `<table class="min-w-full border border-border my-2">${htmlRows}</table>`;
   });
 };
 
@@ -422,7 +490,7 @@ const processExpandBlocks = (content: string): string => {
 const processSpecialSections = (content: string): string => {
   // Procesar 'See also'
   content = content.replace(/(^|\n)(See also)\s*\n([\s\S]*?)(?=\n\w|$)/gi, (_m, pre, header, body) => {
-    return `${pre}<section class="bg-green-50 border-l-4 border-green-400 p-2 my-2"><h4 class="font-bold">${header}</h4><div>${body.trim()}</div></section>`;
+    return `${pre}<section class="bg-muted/50 border border-border rounded-lg p-3 my-2"><h4 class="font-semibold text-foreground mb-1">${header}</h4><div>${body.trim()}</div></section>`;
   });
   // Procesar 'Examples'
   content = content.replace(/(^|\n)(Examples?)\s*\n([\s\S]*?)(?=\n\w|$)/gi, (_m, pre, header, body) => {
@@ -432,7 +500,7 @@ const processSpecialSections = (content: string): string => {
       if (!num) return _pm;
       return `<span class="${DTextConfig.CSS_CLASSES.POST_BADGE}" data-post-badge data-post-id="${num}" title="Post #${num}">Post #${num}</span>`;
     });
-    return `${pre}<section class="bg-blue-50 border-l-4 border-blue-400 p-2 my-2"><h4 class="font-bold">${header}</h4><div>${bodyWithBadges.trim()}</div></section>`;
+    return `${pre}<section class="bg-muted/50 border border-border rounded-lg p-3 my-2"><h4 class="font-semibold text-foreground mb-1">${header}</h4><div>${bodyWithBadges.trim()}</div></section>`;
   });
   return content;
 };
@@ -462,20 +530,21 @@ const processNumberedReferences = (content: string): string => {
     const number = numberMatch[1];
     const url = linkDefinitions.get(number);
     
-    if (url) {
+    if (url && isSafeUrl(url)) {
       // Badge activo con enlace
-      return `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="inline-block bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300 border border-orange-200 dark:border-orange-700 px-2 py-1 rounded-md text-xs font-medium mr-1 hover:bg-orange-200 dark:hover:bg-orange-800 hover:text-orange-900 dark:hover:text-orange-100 transition-colors cursor-pointer shadow-sm">${escapeHtml(numberText)}</a>`;
+      return `<a href="${escapeAttr(url)}" target="_blank" rel="noopener noreferrer" class="cat-badge cat-default font-mono tabular-nums mr-1">${escapeHtml(numberText)}</a>`;
     } else {
       // Badge inactivo sin enlace
-      return `<span class="inline-block bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-600 px-2 py-1 rounded-md text-xs font-medium mr-1 shadow-sm">${escapeHtml(numberText)}</span>`;
+      return `<span class="cat-badge cat-default font-mono tabular-nums mr-1">${escapeHtml(numberText)}</span>`;
     }
   });
   
   // Formatear definiciones como tarjetas clickeables
   processed = processed.replace(DTextRegex.NUMBERED_LINK_DEFINITION, (_match, number, url) => {
-    return `<div class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mt-2 p-2 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg">
-      <span class="inline-block bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300 border border-orange-200 dark:border-orange-700 px-2 py-1 rounded-md text-xs font-semibold shadow-sm">[${escapeHtml(number)}]</span>
-      <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 underline hover:no-underline transition-colors flex-1 truncate">${escapeHtml(url)}</a>
+    if (!isSafeUrl(url)) return `[${escapeHtml(number)}] ${escapeHtml(url)}`;
+    return `<div class="flex items-center gap-2 text-sm text-muted-foreground mt-2 p-2 bg-muted/50 border border-border rounded-lg">
+      <span class="cat-badge cat-default font-mono tabular-nums">[${escapeHtml(number)}]</span>
+      <a href="${escapeAttr(url)}" target="_blank" rel="noopener noreferrer" class="text-primary-text underline underline-offset-[3px] flex-1 truncate">${escapeHtml(url)}</a>
     </div>`;
   });
   
@@ -493,7 +562,8 @@ const sanitizeUnclosedTags = (content: string): string => {
     const openCount = (content.match(open) || []).length;
     const closeCount = (content.match(close) || []).length;
     if (openCount > closeCount) {
-      content += '</' + tag + '>'.repeat(openCount - closeCount);
+      // Cerrar con el tag DText correspondiente (se convertirá a HTML después)
+      content += `[/${tag}]`.repeat(openCount - closeCount);
     }
   }
   return content;
@@ -676,8 +746,8 @@ const processExamplePosts = (content: string, postImageMap: PostImageMap = {}, n
 
       // Si tenemos la URL de imagen (map pre-cargado) incrustamos directamente la miniatura
       const imgUrl = postImageMap[id];
-      if (imgUrl) {
-        const img = `<img src="${imgUrl}" alt="Post #${id}" class="w-full h-auto max-h-48 object-contain rounded cursor-pointer hover:opacity-80 transition-opacity" data-post-id="${id}" loading="lazy" decoding="async" />`;
+      if (imgUrl && isSafeUrl(imgUrl)) {
+        const img = `<img src="${escapeAttr(imgUrl)}" alt="Post #${id}" class="w-full h-auto max-h-48 object-contain rounded-lg cursor-pointer transition-opacity hover:opacity-90" data-post-id="${id}" loading="lazy" decoding="async" />`;
         processedPosts.push(`<article data-type="post" data-id="${id}" class="${DTextConfig.CSS_CLASSES.MEDIA_EMBED}"><div class="${DTextConfig.CSS_CLASSES.MEDIA_IMAGE}">${img}</div><div class="${DTextConfig.CSS_CLASSES.MEDIA_CAPTION}">${caption}</div></article>`);
         return;
       }
@@ -700,10 +770,11 @@ const processExamplePosts = (content: string, postImageMap: PostImageMap = {}, n
 export const formatDTextSafe = (dtextContent: string): string => {
   if (!validateStringInput(dtextContent)) return '';
 
-  let formatted = sanitizeUnclosedTags(dtextContent);
+  // SEGURIDAD: escapar HTML crudo ANTES de generar cualquier markup (la entrada no es confiable).
+  // Las regex de DText no dependen de < > & (DIRECT_LINK/USER_MENTION_HTML ya esperan &lt; &gt;).
+  let formatted = escapeHtml(sanitizeUnclosedTags(dtextContent));
 
   // ===== HEADERS (h1., h2., h3., h4., h5., h6. y con IDs tipo h4#about.) =====
-  // IMPORTANTE: Procesar headers ANTES del escape HTML para que los wiki links funcionen
   // Soporte para hX#id. Header con id
   formatted = formatted.replace(/^(h[1-6])#([a-zA-Z0-9_\-]+)\.\s+(.*)$/gm, (_m, h, id, content) => {
     const tag = h.toLowerCase() as keyof typeof DTextConfig.HEADERS;
@@ -716,12 +787,6 @@ export const formatDTextSafe = (dtextContent: string): string => {
   formatted = formatted.replace(DTextConfig.HEADERS.h4.pattern, (_m, id, content) => `<h4${id ? ` id="${id}"` : ''} class="${DTextConfig.HEADERS.h4.class}">${applyTagAndWikiLinks(content)}</h4>`);
   formatted = formatted.replace(DTextConfig.HEADERS.h5.pattern, (_m, id, content) => `<h5${id ? ` id="${id}"` : ''} class="${DTextConfig.HEADERS.h5.class}">${applyTagAndWikiLinks(content)}</h5>`);
   formatted = formatted.replace(DTextConfig.HEADERS.h6.pattern, (_m, id, content) => `<h6${id ? ` id="${id}"` : ''} class="${DTextConfig.HEADERS.h6.class}">${applyTagAndWikiLinks(content)}</h6>`);
-
-  // Escapar HTML básico para seguridad (después de procesar headers)
-  formatted = formatted
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
 
   // ===== PROCESAMIENTO DE BLOQUES COMPLEJOS =====
   // Eliminar bloques expand completos (los procesaremos mejor abajo)
@@ -752,8 +817,10 @@ export const formatDTextSafe = (dtextContent: string): string => {
   formatted = formatted.replace(DTextRegex.USER_MENTION, '<span class="' + DTextConfig.CSS_CLASSES.USER_MENTION + '">@$1</span>');
 
   // ===== EMOJIS (procesar antes que los enlaces para evitar conflictos) =====
-  formatted = formatted.replace(DTextRegex.EMOJI, (_m, name) => {
-    const emoji = emojiMap[name] || '😊';
+  // Solo emojis conocidos: un fallback genérico convertía ":https:" de los enlaces en 😊
+  formatted = formatted.replace(DTextRegex.EMOJI, (match, name) => {
+    const emoji = emojiMap[name];
+    if (!emoji) return match;
     return `<span class="inline-block text-lg" title=":${name}:">${emoji}</span>`;
   });
 
@@ -834,10 +901,10 @@ export const formatDTextSafe = (dtextContent: string): string => {
   // ===== MEDIA EMBEDS =====
   formatted = formatted.replace(DTextRegex.POST_INDIVIDUAL, (_m, postId) => {
     const id = Number(postId);
-  return `<a href="/posts/${id}" class="text-blue-500 underline">Post #${id}</a>`;
+  return `<a href="/posts/${id}" class="text-primary-text underline underline-offset-[3px]">Post #${id}</a>`;
   });
   formatted = formatted.replace(DTextRegex.ASSET_REFERENCE, () => {
-    return `<span class="text-gray-400 dark:text-gray-500">[Asset]</span>`;
+    return `<span class="text-muted-foreground">[Asset]</span>`;
   });
 
   // ===== FORMATO BÁSICO =====
@@ -856,7 +923,7 @@ export const formatDTextSafe = (dtextContent: string): string => {
 
   // ===== ENLACES WIKI Y PARENTESIS (mantener paréntesis con enlaces) =====
   formatted = formatted.replace(/\(([^\(\)\[]*\[\[[^\]]+\]\][^\(\)]*)\)/g, (_m, inside) => {
-    return `<span class="text-gray-500 dark:text-gray-400">(${inside})</span>`;
+    return `<span class="text-muted-foreground">(${inside})</span>`;
   });
 
   // ===== LÍNEAS Y ESPACIOS =====
@@ -878,11 +945,11 @@ export const formatDTextSafe = (dtextContent: string): string => {
 
   // ===== SECCIONES ESPECIALES COMO SEE ALSO =====
   formatted = formatted.replace(/(^|\n)(See also)\s*\n([\s\S]*?)(?=\n\w|$)/gi, (_m, pre, header, body) => {
-    return `${pre}<section class="bg-green-50 border-l-4 border-green-400 p-2 my-2"><h4 class="font-bold">${header}</h4><div>${body.trim()}</div></section>`;
+    return `${pre}<section class="bg-muted/50 border border-border rounded-lg p-3 my-2"><h4 class="font-semibold text-foreground mb-1">${header}</h4><div>${body.trim()}</div></section>`;
   });
 
   // Eliminar/normalizar anchors duplicados y rellenar badges vacíos para evitar botones sin texto
-  return fillEmptyBadgeAnchors(unifyDuplicateAnchors(dedupeDuplicateLinks(formatted)));
+  return sanitizeHtml(fillEmptyBadgeAnchors(unifyDuplicateAnchors(dedupeDuplicateLinks(formatted))));
 };
 
 /**
@@ -895,8 +962,9 @@ export const formatDTextSafe = (dtextContent: string): string => {
 export const formatDTextAdvanced = (dtextContent: string, postImageMap: PostImageMap = {}, nsfwBlockedPosts: Set<number> = new Set()): string => {
   if (!validateStringInput(dtextContent)) return '';
 
-  dtextContent = sanitizeUnclosedTags(dtextContent);
-  
+  // SEGURIDAD: escapar HTML crudo antes de convertir DText a markup (la entrada no es confiable)
+  dtextContent = escapeHtml(sanitizeUnclosedTags(dtextContent));
+
   // Procesar referencias numeradas en todo el contenido antes de dividir en bloques
   dtextContent = processNumberedReferences(dtextContent);
 
@@ -1147,8 +1215,8 @@ export const formatDTextAdvanced = (dtextContent: string, postImageMap: PostImag
     html = html.replace(DTextRegex.POST_INDIVIDUAL, (_m, postId) => {
       const id = Number(postId);
       const imgUrl = postImageMap[id];
-      if (imgUrl) {
-        return `<div class="my-2 max-w-full overflow-hidden"><img src="${imgUrl}" alt="Post #${id}" class="rounded shadow w-full h-auto max-h-96 object-contain cursor-pointer hover:opacity-80 transition-opacity" data-post-id="${id}" /><div class="text-xs text-gray-500 dark:text-gray-400 mt-1">Post #${id}</div></div>`;
+      if (imgUrl && isSafeUrl(imgUrl)) {
+        return `<div class="my-2 max-w-full overflow-hidden"><img src="${escapeAttr(imgUrl)}" alt="Post #${id}" class="rounded-lg w-full h-auto max-h-96 object-contain cursor-pointer transition-opacity hover:opacity-90" data-post-id="${id}" /><div class="text-xs text-muted-foreground mt-1 font-mono tabular-nums">Post #${id}</div></div>`;
       }
               return `<span class=\"${DTextConfig.CSS_CLASSES.POST_BADGE}\" data-post-badge data-post-id=\"${id}\" title=\"Post #${id}\">Post #${id}</span>`;
     });
@@ -1181,7 +1249,7 @@ export const formatDTextAdvanced = (dtextContent: string, postImageMap: PostImag
   });
 
   const joined = htmlBlocks.join('');
-  return fillEmptyBadgeAnchors(unifyDuplicateAnchors(dedupeDuplicateLinks(joined)));
+  return sanitizeHtml(fillEmptyBadgeAnchors(unifyDuplicateAnchors(dedupeDuplicateLinks(joined))));
 };
 
 /**
@@ -1373,115 +1441,82 @@ export const extractFirstParagraph = (dtextBody: string): string => {
   return '';
 };
 
+// ===== SANITIZACIÓN (DOMPurify) =====
+
+// Tags que el formateador genera legítimamente
+const PURIFY_ALLOWED_TAGS = [
+  'a', 'strong', 'b', 'em', 'i', 'u', 's', 'span', 'br', 'p', 'div',
+  'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+  'ul', 'ol', 'li',
+  'blockquote', 'pre', 'code',
+  'table', 'thead', 'tbody', 'tr', 'td', 'th',
+  'details', 'summary', 'section', 'article', 'img'
+];
+
+// Atributos permitidos (data-* se permiten vía ALLOW_DATA_ATTR: data-tag-name, data-post-id, ...)
+const PURIFY_ALLOWED_ATTR = [
+  'class', 'id', 'title', 'href', 'target', 'rel', 'src', 'alt', 'loading', 'decoding'
+];
+
+const PURIFY_CONFIG = {
+  ALLOWED_TAGS: PURIFY_ALLOWED_TAGS,
+  ALLOWED_ATTR: PURIFY_ALLOWED_ATTR,
+  ALLOW_DATA_ATTR: true,
+  ALLOW_UNKNOWN_PROTOCOLS: false,
+  FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed', 'form', 'input', 'textarea', 'select', 'button', 'svg', 'math', 'link', 'meta', 'base'],
+  FORBID_ATTR: ['style', 'srcset', 'action', 'formaction', 'xlink:href'],
+  RETURN_TRUSTED_TYPE: false as const
+};
+
+type Purifier = ReturnType<typeof DOMPurify>;
+let purifierInstance: Purifier | null = null;
+
 /**
- * Limpia y valida contenido HTML para prevenir XSS
+ * Instancia propia de DOMPurify (los hooks no afectan a otros usos globales de DOMPurify)
+ */
+const getPurifier = (): Purifier | null => {
+  if (purifierInstance) return purifierInstance;
+  if (typeof window === 'undefined') return null;
+  const instance = DOMPurify(window);
+  if (!instance.isSupported) return null;
+
+  instance.addHook('afterSanitizeAttributes', (node: Element) => {
+    if (typeof node.hasAttribute !== 'function') return;
+    // href/src: solo http(s), rutas relativas y anchors
+    for (const attr of ['href', 'src']) {
+      if (node.hasAttribute(attr) && !isAllowedUrlValue(node.getAttribute(attr) || '')) {
+        node.removeAttribute(attr);
+      }
+    }
+    // target: solo _blank, y siempre con rel="noopener noreferrer"
+    if (node.hasAttribute('target')) {
+      if (node.getAttribute('target') === '_blank') {
+        node.setAttribute('rel', 'noopener noreferrer');
+      } else {
+        node.removeAttribute('target');
+      }
+    }
+  });
+
+  purifierInstance = instance;
+  return purifierInstance;
+};
+
+/**
+ * Limpia y valida contenido HTML para prevenir XSS (wrapper de DOMPurify)
  * @param htmlContent - Contenido HTML
  * @returns HTML limpio y seguro
  */
 export const sanitizeHtml = (htmlContent: string): string => {
   if (!validateStringInput(htmlContent)) return '';
 
-  // Lista de tags permitidos basada en las características de DText
-  const allowedTags = [
-    'strong', 'em', 'u', 's', 'span', 'a', 'br', 'p', 'div',
-    'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-    'ul', 'ol', 'li',
-    'blockquote', 'pre', 'code', 'table', 'tr', 'td', 'details', 'summary', 'section'
-  ];
-  
-  const allowedAttributes: AllowedAttributes = {
-    'span': ['class', 'title'],
-    'a': ['href', 'target', 'rel', 'class', 'data-tag-name'],
-    'h1': ['class', 'id'],
-    'h2': ['class', 'id'],
-    'h3': ['class', 'id'],
-    'h4': ['class', 'id'],
-    'h5': ['class', 'id'],
-    'h6': ['class', 'id'],
-    'ul': ['class'],
-    'ol': ['class'],
-    'li': ['class'],
-    'blockquote': ['class'],
-    'pre': ['class'],
-    'code': ['class'],
-    'p': ['class'],
-    'div': ['class'],
-    'strong': ['class'],
-    'em': ['class'],
-    'table': ['class'],
-    'tr': [],
-    'td': [],
-    'details': ['class'],
-    'summary': ['class'],
-    'section': ['class']
-  };
+  const purifier = getPurifier();
+  if (!purifier) {
+    // Sin DOM (SSR/entorno no soportado): degradar a texto plano escapado, nunca devolver HTML sin sanear
+    return escapeHtml(htmlContent.replace(/<[^>]*>/g, '')).trim();
+  }
 
-  // Remover cualquier script o tag peligroso
-  let cleaned = htmlContent
-    .replace(DTextRegex.SCRIPT_TAG, '') // Scripts
-    .replace(DTextRegex.IFRAME_TAG, '') // iFrames
-    .replace(DTextRegex.OBJECT_TAG, '') // Objects
-    .replace(DTextRegex.EMBED_TAG, '') // Embeds
-    .replace(DTextRegex.FORM_TAG, '') // Forms
-    .replace(DTextRegex.INPUT_TAG, '') // Inputs
-    .replace(DTextRegex.TEXTAREA_TAG, '') // Textareas
-    .replace(DTextRegex.SELECT_TAG, '') // Selects
-    .replace(DTextRegex.BUTTON_TAG, '') // Buttons
-    .replace(DTextRegex.EVENT_HANDLER_QUOTED, '') // Event handlers
-    .replace(DTextRegex.EVENT_HANDLER_UNQUOTED, '') // Event handlers sin comillas
-    .replace(DTextRegex.JAVASCRIPT_URL, 'blocked:') // JavaScript URLs
-    .replace(DTextRegex.VBSCRIPT_URL, 'blocked:') // VBScript URLs
-    .replace(DTextRegex.DATA_URL, 'blocked:') // Data URLs (pueden ser peligrosos)
-    .replace(DTextRegex.STYLE_TAG, '') // Estilos inline (pueden contener CSS malicioso)
-    .replace(DTextRegex.STYLE_ATTR_QUOTED, '') // Atributos style
-    .replace(DTextRegex.STYLE_ATTR_UNQUOTED, ''); // Atributos style sin comillas
-
-  // Función auxiliar para limpiar atributos no permitidos
-  const cleanAttributes = (tagName: string, attributes: string): string => {
-    const allowed = allowedAttributes[tagName.toLowerCase()] || [];
-    return attributes.replace(DTextRegex.ATTRIBUTE_PATTERN, (match: string, attr: string, value: string) => {
-      if (allowed.includes(attr.toLowerCase())) {
-        // Validar que los valores de href sean seguros
-        if (attr.toLowerCase() === 'href') {
-          if (value.match(DTextRegex.SAFE_URL) || value.match(DTextRegex.SAFE_PATH)) {
-            return match;
-          }
-          return ''; // Eliminar hrefs no seguros
-        }
-        return match;
-      }
-      return ''; // Eliminar atributos no permitidos
-    });
-  };
-
-  // Limpiar tags no permitidos pero preservar el contenido
-  cleaned = cleaned.replace(DTextRegex.HTML_TAG, (_match: string, tagName: string, attributes: string) => {
-    if (allowedTags.includes(tagName.toLowerCase())) {
-      if (attributes.trim()) {
-        const cleanAttrs = cleanAttributes(tagName, attributes);
-        return `<${tagName}${cleanAttrs ? ' ' + cleanAttrs : ''}>`;
-      }
-      return `<${tagName}>`;
-    }
-    return ''; // Eliminar tags no permitidos
-  });
-
-  // Decodificar entidades HTML básicas que fueron codificadas previamente para procesamiento
-  cleaned = cleaned
-    .replace(DTextRegex.AMP_ENTITY, '&')
-    .replace(DTextRegex.LT_ENTITY, '<')
-    .replace(DTextRegex.GT_ENTITY, '>');
-
-  // Recodificar caracteres peligrosos que no están en tags
-  cleaned = cleaned.replace(DTextRegex.HTML_ENTITIES, (_match: string, tag?: string, char?: string) => {
-    if (tag) return tag; // Preservar tags válidos
-    if (char === '<') return '&lt;';
-    if (char === '>') return '&gt;';
-    if (char === '&') return '&amp;';
-    return char || '';
-  });
-
-  return cleaned.trim();
+  return String(purifier.sanitize(htmlContent, PURIFY_CONFIG)).trim();
 };
 
 /**
@@ -1598,10 +1633,11 @@ export const extractCategorizedExamplePosts = (dtextBody: string): CategoryPosts
 
 export function formatPostCaption(caption: string): string {
   if (!caption) return '';
-  let formatted = applyBasicFormatting(caption);
+  // SEGURIDAD: escapar HTML crudo antes de generar markup
+  let formatted = applyBasicFormatting(escapeHtml(caption));
   formatted = applyTagAndWikiLinks(formatted);
   formatted = replaceExternalLinks(formatted);
-  return finalizeAnchors(formatted);
+  return sanitizeHtml(finalizeAnchors(formatted));
 }
 
 export default {
@@ -1685,7 +1721,7 @@ const replaceExternalLinks = memoize((input: string): string => {
 });
 
 const finalizeAnchors = (html: string): string => {
-  let before = html;
+  const before = html;
   const dupRegex = /<a([^>]*href="([^"]+)"[^>]*)><\/a>(?=\s*<a[^>]*href="\2")/g;
   // eliminar anchors vacíos consecutivos antes de duplicados
   html = html.replace(dupRegex, '');

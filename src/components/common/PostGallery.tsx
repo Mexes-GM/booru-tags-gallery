@@ -41,7 +41,7 @@ const PostGallery: React.FC<PostGalleryProps> = ({
         {posts.map((post) => (
           <article
             key={post.id}
-            className="dtext-media-embed flex flex-col bg-white dark:bg-gray-800 rounded shadow overflow-hidden"
+            className="dtext-media-embed flex flex-col overflow-hidden rounded-xl bg-card"
           >
             <div className="flex-1 flex items-center justify-center min-h-[120px] media-embed-image p-2">
               {nsfwBlockedPosts.has(post.id) ? (
@@ -50,7 +50,7 @@ const PostGallery: React.FC<PostGalleryProps> = ({
                 <img
                   src={post.preview_file_url}
                   alt={post.tag_string || ''}
-                  className="rounded shadow object-contain max-h-96 w-full h-auto cursor-pointer hover:opacity-80 transition-opacity"
+                  className="h-auto max-h-96 w-full cursor-pointer rounded-lg object-contain transition-opacity hover:opacity-90"
                   loading="lazy"
                   onClick={() => handleImageClick(post)}
                   onError={e => {
@@ -60,7 +60,7 @@ const PostGallery: React.FC<PostGalleryProps> = ({
                 />
               )}
             </div>
-            <div className="media-embed-caption mt-auto p-2 text-xs text-center text-gray-500 dark:text-gray-400 text-balance">
+            <div className="media-embed-caption mt-auto p-2 text-xs text-center text-muted-foreground text-balance">
               {renderCaption ? renderCaption(post) : null}
             </div>
           </article>
@@ -70,16 +70,16 @@ const PostGallery: React.FC<PostGalleryProps> = ({
   }
   return (
     <div className="text-center py-8">
-      <div className="text-gray-400 mb-2">
+      <div className="text-muted-foreground/60 mb-2">
         <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
         </svg>
       </div>
       {emptyMessage ? emptyMessage : (
-        <p className="text-gray-500 dark:text-gray-400 text-sm mb-2">{t('tags.noExamples')}</p>
+        <p className="text-muted-foreground text-sm mb-2">{t('tags.noExamples')}</p>
       )}
       {isNSFWFilterEnabled && (
-        <div className="mt-2 text-xs text-yellow-700 dark:text-yellow-300 bg-yellow-100 dark:bg-yellow-900/50 border border-yellow-300 dark:border-yellow-600 rounded px-3 py-2 inline-block">
+        <div className="mt-2 inline-block rounded-lg border border-warning-border bg-warning-soft px-3 py-2 text-xs text-warning-text">
           <strong>{t('common.error')}:</strong> {t('nsfw.blockedDescription')}
         </div>
       )}

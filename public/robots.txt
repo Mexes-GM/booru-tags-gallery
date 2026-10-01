@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://danbooru-tags-explorer.netlify.app/sitemap.xml
+# The Sitemap line is appended at build time (npm run build) from VITE_SITE_URL in .env.production.
