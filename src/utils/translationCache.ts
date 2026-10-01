@@ -46,7 +46,7 @@ class TranslationCache {
       if (stored) {
         this.cache = stored;
       }
-    } catch (error) {
+    } catch {
       // Failed to load from storage
       this.cache = {};
     }
@@ -58,7 +58,7 @@ class TranslationCache {
   private saveToStorage(): void {
     try {
       cacheTranslation.set(TranslationCache.CACHE_KEY, this.cache, TranslationCache.DEFAULT_TTL);
-    } catch (error) {
+    } catch {
       // Failed to save to storage
     }
   }

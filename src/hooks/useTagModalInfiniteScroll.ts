@@ -120,7 +120,7 @@ export function useTagModalInfiniteScroll({
           setHasMore(false);
         }
       }
-    } catch (err) {
+    } catch {
       // Silently handle error loading more posts
       setError('Error al cargar más imágenes');
       setHasMore(false);

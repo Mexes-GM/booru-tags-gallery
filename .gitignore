@@ -39,6 +39,7 @@ docs/
 .env
 .env.*
 !.env.example
+!.env.production
 
 # Local deploy configs
 .netlify

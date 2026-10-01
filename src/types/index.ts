@@ -178,7 +178,7 @@ export interface UseDanbooruApiReturn {
   getPostsForTag: (tagName: string, limit?: number, order?: string) => Promise<DanbooruPost[]>;
   getTagPreviewImage: (tagName: string, preferredRatio?: number | null, element?: HTMLElement | null, priority?: number, filteredTagName?: string | null) => Promise<string | null>;
   getTagWikiInfo: (tagName: string) => Promise<DanbooruWikiPage | null>;
-  getWikiExamplePreview: (tagName: string, rotationIndex?: number, searchParams?: Record<string, any>) => Promise<string | null>;
+  getWikiExamplePreview: (tagName: string, rotationIndex?: number, searchParams?: Record<string, unknown>) => Promise<string | null>;
   loading: boolean;
   error: string | null;
 }
@@ -269,6 +269,10 @@ export interface LocalTagData {
   aliases: string[];
   displayName: string;
   searchText: string;
+  /** Prompt taxonomy from Booru Prompt Gallery (clothing, pose, appearance…). Synced by `npm run sync-tags`. */
+  promptCategory?: string;
+  /** Finer prompt grouping, e.g. headwear, handheld, anatomy. */
+  subcategory?: string;
 }
 
 // Tipos para las categorías de tags

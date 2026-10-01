@@ -5,7 +5,7 @@ interface ImageLoadingContextType {
   loadImage: (id: string, url: string, priority: number, isVisible: boolean) => void
   cancelImage: (id: string) => void
   updateVisibility: (id: string, isVisible: boolean) => void
-  getLoadingQueue: () => any[]
+  getLoadingQueue: () => unknown[]
 }
 
 export const useImageLoading = (): ImageLoadingContextType => {

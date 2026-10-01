@@ -122,7 +122,7 @@ const useDanbooruRateLimitedScroll = ({
           isRateLimited: stats.rateLimitInfo.remaining <= MIN_RATE_LIMIT_BUFFER
         }))
       }
-    } catch (error) {
+    } catch {
       // Silently handle rate limit info error
     }
   }, [])
@@ -263,7 +263,8 @@ const useDanbooruRateLimitedScroll = ({
   const resetScroll = useCallback(() => {
     setCurrentPage(1)
     setRandomTagsIndex(0)
-    setDisplayedTags([])
+    // No need to clear displayedTags: it is rebuilt from the inputs above. Clearing
+    // it here left the grid empty when the page was already 1 (nothing to rebuild).
     setIsLoadingMore(false)
     
     if (loadMoreTimeoutRef.current) {

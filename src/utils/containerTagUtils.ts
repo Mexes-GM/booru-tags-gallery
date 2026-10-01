@@ -61,5 +61,5 @@ export const getContainerTagBadgeText = (containerInfo: ContainerTagInfo): strin
  */
 export const getContainerTagBadgeColor = (containerInfo: ContainerTagInfo): string => {
   if (!containerInfo.isContainer) return '';
-  return 'bg-purple-100 text-purple-800 border-purple-200';
+  return 'cat-badge cat-group';
 }; 

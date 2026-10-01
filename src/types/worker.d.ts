@@ -3,20 +3,6 @@
 export {};
 
 declare global {
-  // Worker module declarations
-  module '*.worker' {
-    import { Worker } from 'worker_threads';
-    const worker: Worker;
-    export default worker;
-  }
-
-  module '*.worker.js' {
-    class WebWorker extends Worker {
-      constructor();
-    }
-    export default WebWorker;
-  }
-
   // Extend the Window interface
   interface Window {
     tagSearchWorker?: Worker;
@@ -38,7 +24,12 @@ declare global {
     | 'FIND_EXACT_TAG'
     | 'GET_RELATED_TAGS'
     | 'GET_POPULAR_TAGS'
-    | 'GET_SYNONYM';
+    | 'GET_SYNONYM'
+    | 'SET_RANKING_WEIGHTS'
+    // Light lookups (main thread never parses tags.json itself)
+    | 'GET_TAGS_BY_NAMES'   // { names: string[] } -> (tag | null)[]
+    | 'GET_CATEGORIES'      // { names: string[] } -> number[] (-1 = unknown)
+    | 'GET_TAGS_COMPACT';   // full list as joined strings + transferable typed arrays
 
   interface WorkerRequest<T = unknown> extends WorkerMessage<T> {
     type: WorkerMessageType;

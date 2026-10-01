@@ -3,6 +3,9 @@
  * Runtime will adjust dynamic parameters (threshold, distance, etc.) depending on query strategy.
  */
 import type { IFuseOptions } from 'fuse.js';
+// Keys live in a JSON file so scripts/generate-fuse-index.cjs builds the
+// prebuilt index with exactly the same keys (and order) as the runtime.
+import fuseKeys from './fuseKeys.json';
 
 export interface FuseRuntimeTuning {
   strictThreshold: number; // first pass
@@ -10,18 +13,10 @@ export interface FuseRuntimeTuning {
   maxRelaxedResults: number; // cap for relaxed
 }
 
-export const tagFuseKeys: NonNullable<IFuseOptions<any>['keys']> = [
-  { name: 'name', weight: 1.2 }, // Aumentado de 1.0 para priorizar coincidencias exactas en nombre
-  { name: 'aliases', weight: 0.6 } // Reducido de 0.7 para reducir peso de aliases
-];
-
-export const tagGroupsFuseKeys: NonNullable<IFuseOptions<any>['keys']> = [
-  { name: 'id', weight: 1.0 },
-  { name: 'title', weight: 0.9 }
-];
+export const tagFuseKeys: NonNullable<IFuseOptions<unknown>['keys']> = fuseKeys.tags;
 
 // Base (will be merged/spread & tweaked at runtime)
-export const baseTagFuseOptions: IFuseOptions<any> = {
+export const baseTagFuseOptions: IFuseOptions<unknown> = {
   keys: tagFuseKeys,
   includeScore: true,
   shouldSort: true,
@@ -35,19 +30,6 @@ export const baseTagFuseOptions: IFuseOptions<any> = {
   findAllMatches: false
 };
 
-export const tagGroupFuseOptions: IFuseOptions<any> = {
-  keys: tagGroupsFuseKeys,
-  includeScore: true,
-  shouldSort: true,
-  ignoreLocation: false, // Enable location-based scoring for tag groups too
-  location: 0, // Start searching from the beginning
-  minMatchCharLength: 1,
-  distance: 80, // Reduced distance to favor matches closer to the start
-  useExtendedSearch: true,
-  threshold: 0.35,
-  isCaseSensitive: false,
-  findAllMatches: false
-};
 
 export const fuseRuntimeTuning: FuseRuntimeTuning = {
   strictThreshold: 0.20, // Reducido de 0.25 para mayor precisión en primera pasada

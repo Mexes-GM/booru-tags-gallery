@@ -22,6 +22,8 @@ const useIntersectionObserver = (
   const [isIntersecting, setIsIntersecting] = useState(false)
   const [entry, setEntry] = useState<IntersectionObserverEntry | null>(null)
   const callbackRef = useRef(callback)
+  // Depend on primitive option values (not the options object, which callers usually recreate every render)
+  const { root = null, rootMargin = '0px', threshold = 0.1 } = options
 
   // Update callback ref when callback changes
   useEffect(() => {
@@ -42,21 +44,14 @@ const useIntersectionObserver = (
     const element = ref.current
     if (!element) return
 
-    const defaultOptions: UseIntersectionObserverOptions = {
-      root: null,
-      rootMargin: '0px',
-      threshold: 0.1,
-      ...options
-    }
-
-    const observer = new IntersectionObserver(handleIntersection, defaultOptions)
+    const observer = new IntersectionObserver(handleIntersection, { root, rootMargin, threshold })
     observer.observe(element)
 
     return () => {
       observer.unobserve(element)
       observer.disconnect()
     }
-  }, [handleIntersection, options.root, options.rootMargin, options.threshold, ref])
+  }, [handleIntersection, root, rootMargin, threshold, ref])
 
   return {
     ref,

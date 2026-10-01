@@ -1,73 +1,42 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useNSFWFilter } from "../context/useNSFWFilter";
-import LoadingSpinner from "./common/LoadingSpinner";
+import { cn } from "../utils/cn";
 
+/**
+ * "NSFW" switch next to the search box. On means sensitive previews are shown,
+ * i.e. the filter is off — the same wording as Booru Prompt Gallery.
+ */
 const NSFWFilterToggle: React.FC = () => {
   const { t } = useTranslation();
   const { isNSFWFilterEnabled, toggleNSFWFilter, isToggling } = useNSFWFilter();
+  const nsfwOn = !isNSFWFilterEnabled;
 
   return (
     <button
+      type="button"
+      role="switch"
+      aria-checked={nsfwOn}
       onClick={toggleNSFWFilter}
       disabled={isToggling}
-      className={`
-  flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-3 h-full border-2 border-l-0 rounded-r-xl transition-all duration-200 min-w-[80px] sm:min-w-[100px] text-xs sm:text-sm
-        ${isToggling
-          ? 'bg-surface-alt dark:bg-surface-alt text-subtle cursor-not-allowed'
-          : isNSFWFilterEnabled
-            ? 'bg-success-tint text-success border-success dark:border-success-strong hover:brightness-110 dark:hover:brightness-110'
-            : 'bg-danger-tint text-danger border-danger dark:border-danger-strong hover:brightness-110 dark:hover:brightness-110'}
-        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
-      `}
-      title={
-        isToggling 
-          ? t('common.loading')
-          : isNSFWFilterEnabled 
-            ? t('nsfw.toggleFilter')
-            : t('nsfw.toggleFilter')
-      }
+      title={t("nsfw.switchTitle")}
+      className="flex h-12 shrink-0 items-center gap-2.5 rounded-lg border border-input bg-background px-3 text-sm font-medium text-foreground transition-colors hover:bg-muted disabled:cursor-wait disabled:opacity-60"
     >
-      <div className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex items-center justify-center">
-        {isToggling ? (
-          <LoadingSpinner size="sm" color="gray" />
-        ) : (
-          <svg 
-            className="w-3.5 h-3.5 sm:w-4 sm:h-4" 
-            fill="none" 
-            stroke="currentColor" 
-            viewBox="0 0 24 24"
-          >
-            <path 
-              strokeLinecap="round" 
-              strokeLinejoin="round" 
-              strokeWidth={2} 
-              d={isNSFWFilterEnabled 
-                ? "M5 13l4 4L19 7" // Checkmark
-                : "M6 18L18 6M6 6l12 12" // X
-              }
-            />
-          </svg>
+      <span>{t("nsfw.short")}</span>
+      <span
+        aria-hidden="true"
+        className={cn(
+          "relative inline-flex h-5 w-9 items-center rounded-full border transition-colors duration-150",
+          nsfwOn ? "border-destructive bg-destructive" : "border-input bg-muted"
         )}
-      </div>
-      
-      <span className="font-medium whitespace-nowrap hidden sm:inline">
-        {isToggling 
-          ? "..." 
-          : t('nsfw.filter')
-        }
+      >
+        <span
+          className={cn(
+            "inline-block h-4 w-4 rounded-full bg-background shadow-sm transition-transform duration-150 ease-out-expo",
+            nsfwOn ? "translate-x-4" : "translate-x-0.5"
+          )}
+        />
       </span>
-      
-      <span className="font-medium whitespace-nowrap sm:hidden">
-        {isToggling 
-          ? "..." 
-          : t('nsfw.filter')
-        }
-      </span>
-      
-      <div className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full flex-shrink-0
-        ${isToggling ? 'bg-warning animate-pulse' : isNSFWFilterEnabled ? 'bg-success' : 'bg-danger'}
-      `} />
     </button>
   );
 };

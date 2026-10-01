@@ -43,21 +43,21 @@
     "noSuggestionsFound": "No suggestions found",
     "clear": "Clear search",
     "loadingWorker": "Loading search engine...",
-  "autoTranslate": "Translate Input",
-  "aliasResolver": "Alias Resolver",
+    "autoTranslate": "Translate Input",
+    "aliasResolver": "Alias Resolver",
     "didYouMean": "Did you mean?",
     "closeSuggestion": "Close suggestion",
     "inputLanguage": "Input Language",
     "loadingLanguages": "Loading languages...",
     "languageAuto": "Auto",
-  "searching": "Searching:",
-  "in": "in",
-  "results": "results",
-  "result": "result",
-  "loading": "loading…",
-  "translating": "Translating…",
-  "translationOf": "Translation of",
-  "aliasResolved": "Alias resolved",
+    "searching": "Searching:",
+    "in": "in",
+    "results": "results",
+    "result": "result",
+    "loading": "loading…",
+    "translating": "Translating…",
+    "translationOf": "Translation of",
+    "aliasResolved": "Alias resolved",
     "categories": {
       "all": "All",
       "general": "General",
@@ -69,13 +69,19 @@
     },
     "startTyping": "Start typing to search tags...",
     "exploreTags": "Explore tags",
-  "tooltips": {
+    "tooltips": {
       "aliasResolver": "When enabled, aliases you type are automatically converted to their canonical tag name before searching.",
       "autoTranslate": "Translate what you type from the selected input language into English.",
       "inputLanguage": "Select the language you will type in so translations are more accurate.",
       "category": "Filter results by the {{category}} tag category."
-  },
-  "enableAutoTranslateFirst": "Enable auto-translate to change the input language"
+    },
+    "enableAutoTranslateFirst": "Enable auto-translate to change the input language",
+    "options": "Options",
+    "promptFilter": "Prompt",
+    "promptFilterTitle": "Filter General tags by prompt category (from Booru Prompt Gallery)",
+    "allInGroup": "All {{group}}",
+    "clearPromptFilter": "Clear prompt filter",
+    "promptFilterUnavailable": "Prompt categories only apply to General tags"
   },
   "tags": {
     "postCount": "{{count}} posts",
@@ -101,13 +107,15 @@
     "disabled": "Disabled",
     "blocked": "Content blocked by NSFW filter",
     "blockedDescription": "This content has been blocked by the sensitive content filter. You can disable the filter in settings to view this content.",
-    "toggleFilter": "Toggle NSFW filter"
+    "toggleFilter": "Toggle NSFW filter",
+    "short": "NSFW",
+    "switchTitle": "Show sensitive content in previews"
   },
   "homepage": {
     "title": "Booru Tag Gallery",
     "description": "Navigate efficiently through thousands of tags and posts to discover and find the perfect elements that enhance your AI image generation",
     "subtitle": "Explore over 93,000 tags with instant search",
-    "welcome": "Welcome to Tag Explorer",
+    "welcome": "Welcome to Booru Tag Gallery",
     "startSearching": "Start searching for tags to explore the database",
     "popularTags": "Popular Tags",
     "recentSearches": "Recent Searches",
@@ -119,7 +127,15 @@
     "rateLimitTitle": "Rate limit reached",
     "rateLimitDescription": "Danbooru API has limited requests to protect the server.",
     "rateLimitReset": "Resets in ~{{minutes}} minutes",
-    "lowRateLimit": "Few requests remaining ({{remaining}}/{{limit}})"
+    "lowRateLimit": "Few requests remaining ({{remaining}}/{{limit}})",
+    "tagline": "Find the exact booru tag in seconds — with its wiki, aliases and real posts, ready to copy.",
+    "by": "By Mexes",
+    "howTo": {
+      "title": "How it works",
+      "search": "Type a tag, alias or word in your language",
+      "open": "Open a card for its wiki and posts",
+      "copy": "Copy, or right-click / long-press any tag"
+    }
   },
   "modal": {
     "close": "Close modal",
@@ -132,9 +148,9 @@
     "notFound": "Not found",
     "serverError": "Server error",
     "unknown": "Unknown error",
-  "retryMessage": "Try again in a moment",
-  "wikiLoadFailed": "Failed to load wiki information.",
-  "galleryLoadFailed": "Failed to load the image gallery."
+    "retryMessage": "Try again in a moment",
+    "wikiLoadFailed": "Failed to load wiki information.",
+    "galleryLoadFailed": "Failed to load the image gallery."
   },
   "settings": {
     "title": "Settings",
@@ -151,7 +167,8 @@
     "imageQuality": "Image quality",
     "imageQualityHigh": "High",
     "imageQualityMedium": "Medium",
-    "imageQualityLow": "Low"
+    "imageQualityLow": "Low",
+    "toggleTheme": "Toggle light / dark theme"
   },
   "footer": {
     "poweredBy": "Powered by",
@@ -165,7 +182,7 @@
     "searching": "Searching:",
     "in": "in",
     "results": "results",
-  "result": "result",
+    "result": "result",
     "loading": "loading…",
     "translating": "Translating…",
     "translationOf": "Translation of",
@@ -184,24 +201,80 @@
     "rightClickCopyTag": "Right click: copy tag",
     "rightClickLongPressCopy": "Right click / Long press: copy",
     "rightClickLongPressCopyCategory": "Right click / Long press: copy category",
-  "rightClickLongPressCopyRemaining": "Right click / Long press: copy remaining",
-  "copyAllTags": "Copy all tags",
-  "copy": "Copy",
-  "scrollToTop": "Scroll to top",
-  "visitOn": "Visit {{name}} on {{platform}}",
-  "supportOnKofi": "Support me on Ko-fi",
-  "tagButtonTooltip": "Click: open tag | Right click / Long press: copy \"{{tag}}\""
+    "rightClickLongPressCopyRemaining": "Right click / Long press: copy remaining",
+    "copyAllTags": "Copy all tags",
+    "copy": "Copy",
+    "scrollToTop": "Scroll to top",
+    "visitOn": "Visit {{name}} on {{platform}}",
+    "supportOnKofi": "Support me on Ko-fi",
+    "tagButtonTooltip": "Click: open tag | Right click / Long press: copy \"{{tag}}\"",
+    "copied": "Copied!",
+    "copyTag": "Copy tag",
+    "support": "Support",
+    "container": "Container",
+    "openTag": "Open tag",
+    "wordmark": "Booru Tag Gallery"
   },
   "errorMessages": {
     "nsfwFilterProvider": "useNSFWFilter must be used within NSFWFilterProvider"
   },
   "gallery": {
     "noPosts": "No posts available",
-    "noPostsDescription": "No posts found for this tag"
-  }
-  ,
+    "noPostsDescription": "No posts found for this tag",
+    "nsfwBlocked_one": "{{count}} post hidden by the NSFW filter",
+    "nsfwBlocked_other": "{{count}} posts hidden by the NSFW filter"
+  },
   "clipboard": {
     "copySuccess": "Text copied",
     "copyFail": "Failed to copy"
+  },
+  "tooltips": {
+    "rightClickCopyCategory": "Right click: copy category",
+    "rightClickCopyTag": "Right click: copy tag",
+    "rightClickLongPressCopy": "Right click / Long press: copy",
+    "rightClickLongPressCopyCategory": "Right click / Long press: copy category",
+    "rightClickLongPressCopyRemaining": "Right click / Long press: copy remaining"
+  },
+  "promptTaxonomy": {
+    "groups": {
+      "appearance": "Appearance",
+      "clothing": "Clothing",
+      "pose": "Pose",
+      "equipment": "Equipment",
+      "scenery": "Scenery",
+      "creature": "Creature",
+      "style": "Style"
+    },
+    "subs": {
+      "anatomy": "Anatomy",
+      "hair": "Hair",
+      "eyes": "Eyes",
+      "demographics": "Demographics",
+      "physiological": "Physiological",
+      "interaction": "Interaction",
+      "posture": "Posture",
+      "gesture": "Gesture",
+      "expression": "Expression",
+      "kinetic": "Motion",
+      "combat": "Combat",
+      "camera": "Camera",
+      "accents": "Accents",
+      "outfit": "Outfit",
+      "top": "Tops",
+      "headwear": "Headwear",
+      "underwear": "Underwear",
+      "bottom": "Bottoms",
+      "legwear": "Legwear",
+      "footwear": "Footwear",
+      "eyewear": "Eyewear",
+      "props": "Props",
+      "setting": "Setting",
+      "atmosphere": "Atmosphere",
+      "style": "Art style",
+      "layout": "Layout",
+      "handheld": "Handheld",
+      "weapon": "Weapons",
+      "animal": "Animals"
+    }
   }
 }

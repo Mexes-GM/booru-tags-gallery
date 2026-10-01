@@ -86,9 +86,19 @@ public/data/            # tags.json (93k+ tags), fuse-index.json, tag-groups.jso
 
 ## Data
 
-- **tags.json** — 93,908 Danbooru tags with categories, post counts, and aliases
+- **tags.json** — 93,908 Danbooru tags with categories, post counts, and aliases, plus an optional prompt taxonomy (`promptCategory` / `subcategory`, e.g. `clothing` / `headwear`) on ~14k of them
 - **fuse-index.json** — pre-built Fuse.js index for instant fuzzy search
 - **tag-groups.json** — curated thematic tag groups
+
+### Syncing the prompt taxonomy
+
+`promptCategory` and `subcategory` come from the `auto_suggest_tags` table that [Booru Prompt Gallery](https://booru-prompt-gallery.vercel.app) keeps in Supabase. Refresh them with:
+
+```bash
+npm run sync-tags -- --env ../booru-prompt-gallery/.env.local
+```
+
+Or put `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in `.env.local` and run `npm run sync-tags`. Add `--dry-run` to preview. The script runs locally only; the site never talks to Supabase. It deliberately leaves names, counts and aliases untouched, because that table's copy of them lags behind Danbooru.
 
 ## Tech Stack
 
@@ -111,6 +121,12 @@ Deployed on **Netlify** with serverless functions for API proxying and translati
 npm run deploy:netlify    # production deploy
 npm run deploy:preview    # preview deploy
 ```
+
+### Site URL (`VITE_SITE_URL`)
+
+Set `VITE_SITE_URL` to the public origin of the deployment (e.g. `https://booru-tags.example.com`) in `.env` or in the host's build environment. It is used for canonical URLs, Open Graph and JSON-LD (`src/config/site.ts`); without it the app falls back to the URL the visitor is on.
+
+The sitemap also needs it: `VITE_SITE_URL=https://your-domain npm run generate-sitemap` writes `public/sitemap.xml` (a sitemap index) plus `sitemap-N.xml` files with every tag ordered by post count, split into files of 45,000 URLs, and adds the `Sitemap:` line to `public/robots.txt`. With no URL configured, the script prints a notice and writes nothing.
 
 ## License
 

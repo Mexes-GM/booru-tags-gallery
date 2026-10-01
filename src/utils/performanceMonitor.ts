@@ -18,6 +18,31 @@ interface NavigationTiming {
   total: number;
 }
 
+interface LayoutShiftEntry extends PerformanceEntry {
+  hadRecentInput: boolean;
+  value: number;
+}
+
+interface PerformanceMemory {
+  usedJSHeapSize: number;
+  totalJSHeapSize: number;
+  jsHeapSizeLimit: number;
+}
+
+export interface PerformanceReport {
+  timestamp: number;
+  url: string;
+  userAgent: string;
+  metrics: PerformanceMetric[];
+  resources: {
+    total: number;
+    totalSize: number;
+    averageLoadTime: number;
+    byType: Record<string, { count: number; size: number; avgDuration: number }>;
+  };
+  memory: { used: number; total: number; limit: number } | null;
+}
+
 interface ResourceTiming {
   name: string;
   duration: number;
@@ -53,7 +78,7 @@ class PerformanceMonitor {
 
       try {
         this.observer.observe({ entryTypes: ['navigation', 'resource', 'paint', 'largest-contentful-paint'] });
-      } catch (e) {
+      } catch {
         // Performance observer not fully supported
       }
     }
@@ -140,8 +165,9 @@ class PerformanceMonitor {
       let clsValue = 0;
       new PerformanceObserver((list) => {
         for (const entry of list.getEntries()) {
-          if (!(entry as any).hadRecentInput) {
-            clsValue += (entry as any).value;
+          const shift = entry as LayoutShiftEntry;
+          if (!shift.hadRecentInput) {
+            clsValue += shift.value;
           }
         }
         this.recordMetric({
@@ -153,7 +179,7 @@ class PerformanceMonitor {
     }
   }
 
-  public recordCustomMetric(name: string, value: number, metadata?: Record<string, any>): void {
+  public recordCustomMetric(name: string, value: number, metadata?: Record<string, unknown>): void {
     this.recordMetric({
       name: `custom.${name}`,
       value,
@@ -205,7 +231,7 @@ class PerformanceMonitor {
         const allMetrics = [...existingMetrics, ...metricsToSend].slice(-500); // Keep last 500
         localStorage.setItem('performance-metrics', JSON.stringify(allMetrics));
       }
-    } catch (error) {
+    } catch {
       // Re-add metrics to queue for retry
       this.metrics.unshift(...metricsToSend.slice(-50)); // Keep only last 50 for retry
     }
@@ -214,10 +240,10 @@ class PerformanceMonitor {
   public getResourceTimings(): ResourceTiming[] {
     if (!('performance' in window)) return [];
 
-    return window.performance.getEntriesByType('resource').map((entry: any) => ({
+    return window.performance.getEntriesByType('resource').map((entry) => ({
       name: entry.name,
       duration: entry.duration,
-      size: entry.transferSize || 0,
+      size: (entry as PerformanceResourceTiming).transferSize || 0,
       type: this.getResourceType(entry.name)
     }));
   }
@@ -231,10 +257,13 @@ class PerformanceMonitor {
     return 'other';
   }
 
-  public generateReport(): any {
+  public generateReport(): PerformanceReport {
     const resourceTimings = this.getResourceTimings();
     const totalSize = resourceTimings.reduce((sum, resource) => sum + resource.size, 0);
-    const avgLoadTime = resourceTimings.reduce((sum, resource) => sum + resource.duration, 0) / resourceTimings.length;
+    const avgLoadTime = resourceTimings.length
+      ? resourceTimings.reduce((sum, resource) => sum + resource.duration, 0) / resourceTimings.length
+      : 0;
+    const memory = (performance as Performance & { memory?: PerformanceMemory }).memory;
 
     return {
       timestamp: Date.now(),
@@ -247,10 +276,10 @@ class PerformanceMonitor {
         averageLoadTime: Math.round(avgLoadTime),
         byType: this.groupResourcesByType(resourceTimings)
       },
-      memory: (performance as any).memory ? {
-        used: Math.round((performance as any).memory.usedJSHeapSize / 1024 / 1024), // MB
-        total: Math.round((performance as any).memory.totalJSHeapSize / 1024 / 1024), // MB
-        limit: Math.round((performance as any).memory.jsHeapSizeLimit / 1024 / 1024) // MB
+      memory: memory ? {
+        used: Math.round(memory.usedJSHeapSize / 1024 / 1024), // MB
+        total: Math.round(memory.totalJSHeapSize / 1024 / 1024), // MB
+        limit: Math.round(memory.jsHeapSizeLimit / 1024 / 1024) // MB
       } : null
     };
   }
@@ -313,12 +342,13 @@ export const measureSync = <T>(name: string, fn: () => T): T => {
   }
 };
 
-// React hook for performance monitoring
-export const usePerformanceMonitor = () => {
-  return {
-    recordMetric: (name: string, value: number) => performanceMonitor.recordCustomMetric(name, value),
-    recordError: (error: Error, context?: string) => performanceMonitor.recordError(error, context),
-    recordInteraction: (action: string, target?: string) => performanceMonitor.recordUserInteraction(action, target),
-    generateReport: () => performanceMonitor.generateReport()
-  };
+// Stable (module-level) API so consumers can safely list these functions as effect deps
+const performanceMonitorApi = {
+  recordMetric: (name: string, value: number) => performanceMonitor.recordCustomMetric(name, value),
+  recordError: (error: Error, context?: string) => performanceMonitor.recordError(error, context),
+  recordInteraction: (action: string, target?: string) => performanceMonitor.recordUserInteraction(action, target),
+  generateReport: () => performanceMonitor.generateReport()
 };
+
+// React hook for performance monitoring
+export const usePerformanceMonitor = () => performanceMonitorApi;

@@ -1,44 +1,36 @@
 {
+  "id": "/",
   "name": "Booru Tags Gallery",
   "short_name": "Booru Tags",
   "description": "A fast and efficient gallery for browsing Danbooru tags with advanced search and filtering capabilities",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#2563eb",
-  "orientation": "portrait-primary",
+  "background_color": "#e9eff6",
+  "theme_color": "#154222",
+  "orientation": "any",
   "scope": "/",
   "lang": "en",
   "dir": "ltr",
-  "categories": ["entertainment", "photo", "utilities"],
+  "categories": [
+    "entertainment",
+    "photo",
+    "utilities"
+  ],
   "icons": [
     {
       "src": "/favicon.png",
-      "sizes": "192x192",
+      "sizes": "960x960",
       "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/favicon.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
   ],
   "screenshots": [
     {
-      "src": "/favicon.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "Booru Tags Gallery - Desktop View"
-    },
-    {
-      "src": "/favicon.png",
-      "sizes": "750x1334",
+      "src": "/screenshots/homepage.png",
+      "sizes": "1112x1651",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "Booru Tags Gallery - Mobile View"
+      "label": "Booru Tags Gallery - Home"
     }
   ],
   "shortcuts": [
@@ -50,7 +42,7 @@
       "icons": [
         {
           "src": "/favicon.png",
-          "sizes": "96x96",
+          "sizes": "960x960",
           "type": "image/png"
         }
       ]
@@ -63,6 +55,5 @@
   "launch_handler": {
     "client_mode": "navigate-existing"
   },
-  "handle_links": "preferred",
-  "capture_links": "existing-client-navigate"
+  "handle_links": "preferred"
 }

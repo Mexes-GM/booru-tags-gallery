@@ -1,0 +1,11 @@
+{
+  "$comment": "Single source of truth for Fuse.js keys. Read by src/config/fuseOptions.ts (runtime) AND scripts/generate-fuse-index.cjs (prebuilt index). A prebuilt Fuse index stores one record slot per key, in this order: if runtime and index keys differ, searches silently look at the wrong field. After editing, run: npm run generate-fuse-index",
+  "tags": [
+    { "name": "name", "weight": 1.2 },
+    { "name": "aliases", "weight": 0.6 }
+  ],
+  "tagGroups": [
+    { "name": "id", "weight": 1.0 },
+    { "name": "title", "weight": 0.9 }
+  ]
+}

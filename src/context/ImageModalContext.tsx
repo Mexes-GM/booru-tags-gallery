@@ -2,7 +2,7 @@ import React, { createContext, useState, useCallback, ReactNode, useEffect, useM
 import { track } from '@vercel/analytics';
 import { DanbooruPost } from '../types';
 import { IMAGE_MODAL_EVENT, ImageClickEvent } from '../utils';
-import { useModalZIndex } from './ModalZIndexContext';
+import { useModalZIndex } from './useModalZIndex';
 
 interface ImageModalContextType {
   selectedPost: DanbooruPost | null;
@@ -127,7 +127,7 @@ export const ImageModalProvider: React.FC<ImageModalProviderProps> = ({ children
         openModal(post);
         try { track('image_modal_fetch', { postId, fetched: true }); } catch {}
       }
-    } catch (error) {
+    } catch {
       // Limpiar estado de error
       setPendingRequests(prev => {
         const newSet = new Set(prev);

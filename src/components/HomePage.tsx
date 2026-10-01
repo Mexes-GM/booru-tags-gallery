@@ -1,5 +1,7 @@
-import { useState, useEffect, useCallback, useMemo, useDeferredValue } from 'react'
+import { absoluteUrl } from '../config/site'
+import { useState, useEffect, useCallback, useMemo, useDeferredValue, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useSearchParams } from 'react-router-dom'
 import { DanbooruTag, LocalTagData } from '../types'
 import useTagSearch from '../hooks/useTagSearch'
 import { loadTagsData, getCachedTags } from '../utils/sharedTagDataLoader'
@@ -8,14 +10,33 @@ import SearchBar from './SearchBar'
 import SearchInfo from './SearchInfo'
 import StableInfiniteScroll from './StableInfiniteScroll'
 import LoadingSpinner from './common/LoadingSpinner'
-import SEO from './SEO'
+import SEO, { SITE_NAME } from './SEO'
 import ScrollToTopButton from './common/ScrollToTopButton'
+import { MousePointerClick, Copy, Languages, SearchX, Search } from 'lucide-react'
+import PromptFilterMenu from './PromptFilterMenu'
+import { PromptFilter, buildTaxonomy, matchesPromptFilter, promptGroupLabel, promptSubLabel } from '../utils/promptTaxonomy'
+
+const SOCIALS = [
+  { label: 'CivitAI', href: 'https://civitai.com/user/Mexes' },
+  { label: 'Tensor.Art', href: 'https://tensor.art/u/616420638671868313' },
+  { label: 'SeaArt', href: 'https://www.seaart.ai/user/e9f2dc73eaf4495fce59838fea87187c?u_code=EUY1AJ3T' },
+]
+
+const compactNumber = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 0 })
+
+// URL state: ?q=<search>&cat=<category> (cat omitted for "all")
+const URL_CATEGORIES = new Set(['all', 'general', 'artist', 'copyright', 'character', 'meta', 'tag_groups'])
+const URL_SYNC_DELAY = 400
+const readUrlCategory = (value: string | null) => (value && URL_CATEGORIES.has(value) ? value : 'all')
 
 /**
  * HomePage - Componente principal que maneja la página de inicio
  */
 const HomePage: React.FC = () => {
   const { t } = useTranslation()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const urlQuery = searchParams.get('q') ?? ''
+  const urlCategory = readUrlCategory(searchParams.get('cat'))
   
   const {
     searchTerm,
@@ -45,7 +66,40 @@ const HomePage: React.FC = () => {
     resolvedCanonicalTerm,
   aliasResolverEnabled,
   setAliasResolverEnabled,
-  } = useTagSearch()
+  } = useTagSearch({ initialTerm: urlQuery, initialCategory: urlCategory })
+
+  // Keep ?q= / ?cat= in sync with the search, so searches are shareable and
+  // survive reloads and back/forward. lastUrlState is what the URL currently
+  // holds, which tells our own URL writes apart from external navigation.
+  const lastUrlState = useRef({ q: urlQuery, cat: urlCategory })
+
+  // URL -> state (back/forward, pasted links)
+  useEffect(() => {
+    const last = lastUrlState.current
+    if (urlQuery !== last.q) setSearchTerm(urlQuery)
+    if (urlCategory !== last.cat) setSelectedCategory(urlCategory)
+    lastUrlState.current = { q: urlQuery, cat: urlCategory }
+  }, [urlQuery, urlCategory, setSearchTerm, setSelectedCategory])
+
+  // state -> URL (debounced, replace: no history entry per keystroke)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const q = searchTerm.trim()
+      const cat = selectedCategory
+      const last = lastUrlState.current
+      if (q === last.q && cat === last.cat) return
+      lastUrlState.current = { q, cat }
+      setSearchParams(prev => {
+        const next = new URLSearchParams(prev)
+        if (q) next.set('q', q)
+        else next.delete('q')
+        if (cat && cat !== 'all') next.set('cat', cat)
+        else next.delete('cat')
+        return next
+      }, { replace: true })
+    }, URL_SYNC_DELAY)
+    return () => clearTimeout(timer)
+  }, [searchTerm, selectedCategory, setSearchParams])
 
   const deferredSearchTerm = useDeferredValue(searchTerm)
   const deferredSearchResults = useDeferredValue(searchResults)
@@ -53,18 +107,56 @@ const HomePage: React.FC = () => {
   const [categoryStats, setCategoryStats] = useState<Record<string, number>>({});
   const [tagsData, setTagsData] = useState<LocalTagData[]>([]);
 
+  // Prompt taxonomy filter (Clothing › Headwear…). Those labels only exist on
+  // General tags, so the filter is dropped for every other Danbooru category.
+  const [promptFilter, setPromptFilter] = useState<PromptFilter | null>(null)
+  const promptFilterAvailable = selectedCategory === 'all' || selectedCategory === 'general'
+  const activePromptFilter = promptFilterAvailable ? promptFilter : null
+
+  useEffect(() => {
+    if (!promptFilterAvailable) setPromptFilter(null)
+  }, [promptFilterAvailable])
+
+  const taxonomy = useMemo(() => buildTaxonomy(tagsData), [tagsData])
+
+  const filteredTagsData = useMemo(
+    () => (activePromptFilter ? tagsData.filter(tag => matchesPromptFilter(tag, activePromptFilter)) : tagsData),
+    [tagsData, activePromptFilter]
+  )
+
+  const filteredSearchResults = useMemo(() => {
+    if (!activePromptFilter) return deferredSearchResults
+    const base = deferredSearchResults.filter(tag => matchesPromptFilter(tag, activePromptFilter))
+    // The worker returns only the top ~50 matches across all tags, which a
+    // narrow filter would mostly discard. Top it up with substring matches
+    // from inside the filter (tags.json is already sorted by post count).
+    const effectiveTerm = translatedTerm && lastTranslatedFor === deferredSearchTerm ? translatedTerm : deferredSearchTerm
+    const term = effectiveTerm.trim().toLowerCase().replace(/\s+/g, '_')
+    if (!term) return base
+    const seen = new Set(base.map(tag => tag.name))
+    const extra = filteredTagsData
+      .filter(tag => !seen.has(tag.name) && (tag.name.includes(term) || tag.aliases?.some(alias => alias.includes(term))))
+      .slice(0, 200)
+    return [...base, ...extra]
+  }, [deferredSearchResults, activePromptFilter, filteredTagsData, deferredSearchTerm, translatedTerm, lastTranslatedFor])
+
   const {
     displayedTags,
     hasMore,
     loadMore,
     isLoadingMore,
     setVisibleRange,
+    resetScroll,
   } = useDanbooruRateLimitedScroll({
-    searchResults: deferredSearchResults,
+    searchResults: filteredSearchResults,
     searchTerm: deferredSearchTerm,
     selectedCategory,
-    tagsData: tagsData || []
+    tagsData: filteredTagsData
   })
+
+  useEffect(() => {
+    resetScroll()
+  }, [activePromptFilter, resetScroll])
 
   useEffect(() => {
     if (isWorkerReady) {
@@ -80,12 +172,12 @@ const HomePage: React.FC = () => {
   useEffect(() => {
     if (!isWorkerReady) return;
     let cancelled = false;
-    const assign = (data: any) => { if (!cancelled) setTagsData(Array.isArray(data) ? data : []); };
+    const assign = (data: LocalTagData[] | null | undefined) => { if (!cancelled) setTagsData(Array.isArray(data) ? data : []); };
     const existing = getCachedTags();
     if (existing) assign(existing);
     const schedule = () => {
       if ('requestIdleCallback' in window) {
-        (window as any).requestIdleCallback(() => !cancelled && loadTagsData().then(assign), { timeout: 2000 });
+        window.requestIdleCallback(() => { if (!cancelled) loadTagsData().then(assign); }, { timeout: 2000 });
       } else {
         setTimeout(() => !cancelled && loadTagsData().then(assign), 50);
       }
@@ -118,113 +210,138 @@ const HomePage: React.FC = () => {
   }, [setSearchTerm, setSelectedCategory])
 
   // Mostrar estado de inicialización del worker
+  const totalTags = Object.entries(categoryStats)
+    .filter(([key]) => key !== 'tag_groups')
+    .reduce((sum, [, n]) => sum + n, 0)
+
   if (isWorkerInitializing) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
+      <div className="flex min-h-[70vh] items-center justify-center px-4">
         <div className="text-center">
-          <LoadingSpinner 
-            size="xl" 
-            variant="spinner"
+          <LoadingSpinner
+            size="lg"
             className="mx-auto"
             ariaLabel={t('common.loadingTags') || 'Loading tags'}
           />
-          <p className="mt-6 text-gray-600 dark:text-gray-400 text-lg">
-            {t('common.initializing')}
-          </p>
-          <p className="mt-2 text-gray-500 dark:text-gray-500 text-sm">
-            {t('common.loadingTags')}
-          </p>
+          <p className="mt-4 text-sm font-medium text-foreground">{t('common.initializing')}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{t('common.loadingTags')}</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+    <div className="pb-16">
       <SEO 
         title={t('homepage.title')}
   description={t('homepage.description') || 'Search and quickly discover the tag you need for your image generation.'}
-        canonical="https://danbooru-tags-explorer.netlify.app/"
+        canonical={absoluteUrl("/")}
         jsonLd={{
           '@context': 'https://schema.org',
           '@type': 'CollectionPage',
-          name: 'Danbooru Tag Explorer Home',
+          name: SITE_NAME,
           description: t('homepage.description') || 'Search and quickly discover the tag you need for your image generation.',
           inLanguage: 'en'
         }}
       />
-      <div className="max-w-6xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
-        <div className="text-center mb-8 sm:mb-12">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold mb-2 sm:mb-4 inline-block relative">
-            <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+      <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
+        {/* Hero */}
+        <section className="grid gap-6 pb-6 pt-6 sm:pt-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)] lg:items-end lg:gap-14 lg:pb-8">
+          <div className="space-y-3 sm:space-y-4">
+            <h1 className="text-balance text-3xl font-semibold leading-[1.05] tracking-tighter sm:text-5xl">
               {t('homepage.title')}
-            </span>
-            <div className="absolute -inset-2 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-lg blur opacity-5 -z-10"></div>
-          </h1>
-          <p className="text-base sm:text-lg text-gray-600 dark:text-gray-400 max-w-3xl mx-auto leading-relaxed">
-            {t('homepage.description')}
-          </p>
-          {/* Badge autor */}
-          <div className="mt-3">
-            <span className="author-badge" aria-label="Author">By Mexes</span>
+            </h1>
+            <p className="max-w-xl text-pretty text-base leading-snug text-muted-foreground sm:text-lg">
+              {t('homepage.tagline')}
+            </p>
+            <p className="font-mono text-xs leading-relaxed text-muted-foreground/80">
+              Danbooru{totalTags > 0 && <> · <span className="tabular-nums">{compactNumber.format(totalTags)}</span> tags</>} · wiki · aliases · examples
+            </p>
+            <p className="text-sm text-muted-foreground">
+              {t('homepage.by')}
+              <span aria-hidden="true" className="mx-2 text-muted-foreground/40">/</span>
+              {SOCIALS.map((s, i) => (
+                <span key={s.label}>
+                  {i > 0 && <span aria-hidden="true" className="mx-1.5 text-muted-foreground/40">·</span>}
+                  <a
+                    href={s.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={t('ui.visitOn', { name: 'Mexes', platform: s.label })}
+                    className="rounded-sm underline decoration-muted-foreground/30 underline-offset-4 transition-colors hover:text-foreground hover:decoration-foreground/60"
+                  >
+                    {s.label}
+                  </a>
+                </span>
+              ))}
+            </p>
           </div>
-          <div className="pt-4 space-y-3">
-            <p className="text-gray-600 dark:text-gray-400 text-sm">{t('ui.moreOfMyWorkHere')}</p>
-            <div className="flex items-center justify-center space-x-4">
-              <a href="https://civitai.com/user/Mexes" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-muted/50 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2" aria-label={t('ui.visitOn', { name: 'Mexes', platform: 'CivitAI' })} data-state="closed">
-                <img src="https://www.google.com/s2/favicons?domain=civitai.com&sz=32" alt="CivitAI" className="w-6 h-6 filter grayscale hover:grayscale-0 transition-all duration-200" />
-              </a>
-              <a href="https://tensor.art/u/616420638671868313" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-muted/50 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2" aria-label={t('ui.visitOn', { name: 'Mexes', platform: 'Tensor.Art' })} data-state="closed">
-                <img src="https://www.google.com/s2/favicons?domain=tensor.art&sz=32" alt="Tensor.Art" className="w-6 h-6 filter grayscale hover:grayscale-0 transition-all duration-200" />
-              </a>
-              <a href="https://www.seaart.ai/user/e9f2dc73eaf4495fce59838fea87187c?u_code=EUY1AJ3T" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-muted/50 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2" aria-label={t('ui.visitOn', { name: 'Mexes', platform: 'SeaArt AI' })} data-state="closed">
-                <img src="https://www.google.com/s2/favicons?domain=seaart.ai&sz=32" alt="SeaArt AI" className="w-6 h-6 filter grayscale hover:grayscale-0 transition-all duration-200" />
-              </a>
-            </div>
-            <div className="flex items-center justify-center mt-3">
-              <a href="https://ko-fi.com/mexes" target="_blank" rel="noopener noreferrer" className="kofi-btn inline-flex items-center px-4 py-2 bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white text-sm font-bold rounded-full transition-colors duration-200" aria-label={t('ui.supportOnKofi')}>
-                <img src="https://www.google.com/s2/favicons?domain=ko-fi.com&sz=32" alt="Ko-fi" className="w-4 h-4 mr-2" />
-                {t('ui.supportOnKofi')}
-              </a>
-            </div>
-          </div>
-        </div>
-        
-        <div className="sticky top-0 z-40 pt-2 sm:pt-4 pb-2 sm:pb-4 -mx-3 sm:-mx-4 md:-mx-6 lg:-mx-8 px-3 sm:px-4 md:px-6 lg:px-8">
-          <div className="max-w-4xl mx-auto">
+
+          {/* How it works: makes the copy gestures discoverable */}
+          <aside className="hidden rounded-xl bg-card p-4 lg:block" aria-label={t('homepage.howTo.title')}>
+            <h2 className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              {t('homepage.howTo.title')}
+            </h2>
+            <ul className="space-y-2.5 text-sm">
+              <li className="flex items-start gap-2.5">
+                <Languages className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                <span>{t('homepage.howTo.search')}</span>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <MousePointerClick className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                <span>{t('homepage.howTo.open')}</span>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <Copy className="mt-0.5 h-4 w-4 shrink-0 text-primary-text" aria-hidden="true" />
+                <span>{t('homepage.howTo.copy')}</span>
+              </li>
+            </ul>
+          </aside>
+        </section>
+
+        {/* Sticky search panel */}
+        <div className="sticky top-0 z-40 -mx-4 bg-background px-4 py-3 sm:-mx-6 sm:px-6">
             <SearchBar
-              searchTerm={searchTerm}
-              onSearchChange={setSearchTerm}
-              onClearSearch={handleClearSearch}
-              suggestions={danbooruSuggestions}
-              synonymSuggestions={synonymSuggestions}
-              selectedCategory={selectedCategory}
-              onCategoryChange={setSelectedCategory}
-              categoryStats={categoryStats}
-              isLoading={isLoading}
-              isTransitioning={isTransitioning}
-              isWorkerReady={isWorkerReady}
-              isSuggestionsLoading={isSuggestionsLoading}
-              isTranslating={isTranslating}
-              // Translation settings
-              autoTranslateEnabled={autoTranslateEnabled}
-              onToggleAutoTranslate={setAutoTranslateEnabled}
-              inputLanguage={inputLanguage}
-              onInputLanguageChange={setInputLanguage}
-              availableLanguages={availableLanguages}
-              isLoadingLanguages={isLoadingLanguages}
-              translatedTerm={translatedTerm}
-              lastTranslatedFor={lastTranslatedFor}
-              aliasResolverEnabled={aliasResolverEnabled}
-              onToggleAliasResolver={setAliasResolverEnabled}
-            />
-          </div>
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            onClearSearch={handleClearSearch}
+            suggestions={danbooruSuggestions}
+            synonymSuggestions={synonymSuggestions}
+            selectedCategory={selectedCategory}
+            onCategoryChange={setSelectedCategory}
+            categoryStats={categoryStats}
+            isLoading={isLoading}
+            isTransitioning={isTransitioning}
+            isWorkerReady={isWorkerReady}
+            isSuggestionsLoading={isSuggestionsLoading}
+            isTranslating={isTranslating}
+            // Translation settings
+            autoTranslateEnabled={autoTranslateEnabled}
+            onToggleAutoTranslate={setAutoTranslateEnabled}
+            inputLanguage={inputLanguage}
+            onInputLanguageChange={setInputLanguage}
+            availableLanguages={availableLanguages}
+            isLoadingLanguages={isLoadingLanguages}
+            translatedTerm={translatedTerm}
+            lastTranslatedFor={lastTranslatedFor}
+            aliasResolverEnabled={aliasResolverEnabled}
+            onToggleAliasResolver={setAliasResolverEnabled}
+            extraFilters={
+              <PromptFilterMenu
+                taxonomy={taxonomy}
+                value={activePromptFilter}
+                onChange={setPromptFilter}
+                disabled={!promptFilterAvailable}
+              />
+            }
+          />
         </div>
 
-        <div className="max-w-4xl mx-auto mb-4 sm:mb-6 mt-4 sm:mt-8">
+        <div className="mb-4 mt-3">
           <SearchInfo
             searchTerm={deferredSearchTerm}
-            searchResults={deferredSearchResults}
+            searchResults={filteredSearchResults}
+            promptFilterLabel={activePromptFilter ? [promptGroupLabel(activePromptFilter.group), activePromptFilter.sub && promptSubLabel(activePromptFilter.sub)].filter(Boolean).join(' › ') : undefined}
             isLoading={isLoading}
             selectedCategory={selectedCategory}
             isTranslating={isTranslating}
@@ -237,40 +354,28 @@ const HomePage: React.FC = () => {
 
         {/* Solo mostrar loading cuando realmente hay una búsqueda en progreso */}
         {(isLoading || isTransitioning) && searchResults.length === 0 && hasSearched && (
-          <div className="flex justify-center items-center py-12 sm:py-16">
+          <div className="flex items-center justify-center py-16">
             <div className="text-center">
-              <LoadingSpinner 
-                size="xl" 
-                variant={isTransitioning ? 'pulse' : 'spinner'}
-                className="mx-auto"
-              />
-              <p className="mt-4 sm:mt-6 text-gray-600 dark:text-gray-400 text-base sm:text-lg transition-opacity duration-200">
-                {t('common.loading')}
-              </p>
+              <LoadingSpinner size="lg" className="mx-auto" />
+              <p className="mt-4 text-sm text-muted-foreground">{t('common.loading')}</p>
             </div>
           </div>
         )}
         
-        {!isLoading && !isTransitioning && searchResults.length === 0 && searchTerm && hasSearched && (
-          <div className="text-center py-12 sm:py-16 px-4">
-            <div className="text-gray-400 mb-4 sm:mb-6">
-              <svg className="mx-auto h-12 w-12 sm:h-16 sm:w-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.034 0-3.9.785-5.291 2.09m6.582 0A7.962 7.962 0 0118 15c-2.034 0-3.9.785-5.291 2.09M15 11V9a6 6 0 00-12 0v2c0 .558.45 1.008 1.006 1.037C4.56 12.02 5 12.448 5 12.954V16c0 .552.448 1 1 1h3.5M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </div>
-            <h3 className="text-lg sm:text-xl font-medium text-primary mb-3 sm:mb-4">
+        {!isLoading && !isTransitioning && filteredSearchResults.length === 0 && searchTerm && hasSearched && (
+          <div className="mx-auto max-w-sm px-4 py-16 text-center">
+            <SearchX className="mx-auto mb-4 h-10 w-10 text-muted-foreground/60" strokeWidth={1.5} aria-hidden="true" />
+            <h3 className="text-balance text-base font-medium">
               {t('search.noResults', { query: searchTerm })}
             </h3>
-            <div className="text-sm text-gray-500 dark:text-gray-400 max-w-sm mx-auto text-center">
-              <p className="font-medium mb-2 sm:mb-3">{t('search.tryGeneral')}</p>
-            </div>
+            <p className="mt-1 text-sm text-muted-foreground">{t('search.tryGeneral').replace(/^\p{Extended_Pictographic}\s*/u, '')}</p>
           </div>
         )}
         
         {/* Mostrar resultados si hay displayedTags O si hay searchResults pero displayedTags está temporalmente vacío */}
-        {(displayedTags.length > 0 || (searchResults.length > 0 && !isLoading && !isTransitioning)) && (
+        {(displayedTags.length > 0 || (filteredSearchResults.length > 0 && !isLoading && !isTransitioning)) && (
           <StableInfiniteScroll
-            tags={displayedTags.length > 0 ? displayedTags : searchResults.slice(0, 20)}
+            tags={displayedTags.length > 0 ? displayedTags : filteredSearchResults.slice(0, 20)}
             searchTerm={deferredSearchTerm}
             isTransitioning={isTransitioning}
             hasMore={hasMore}
@@ -285,18 +390,10 @@ const HomePage: React.FC = () => {
 
         {/* Mostrar mensaje cuando no hay búsqueda y el worker está listo */}
         {!searchTerm && !isLoading && !isTransitioning && displayedTags.length === 0 && isWorkerReady && (
-          <div className="text-center py-12 sm:py-16 px-4">
-            <div className="text-gray-400 mb-4 sm:mb-6">
-              <svg className="mx-auto h-12 w-12 sm:h-16 sm:w-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </div>
-            <h3 className="text-lg sm:text-xl font-medium text-primary mb-2">
-              {t('search.startTyping')}
-            </h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              {t('search.exploreTags')}
-            </p>
+          <div className="px-4 py-16 text-center">
+            <Search className="mx-auto mb-4 h-10 w-10 text-muted-foreground/60" strokeWidth={1.5} aria-hidden="true" />
+            <h3 className="text-base font-medium">{t('search.startTyping')}</h3>
+            <p className="mt-1 text-sm text-muted-foreground">{t('search.exploreTags')}</p>
           </div>
         )}
       </div>

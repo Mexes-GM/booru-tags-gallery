@@ -1,25 +1,5 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
-
-type ModalType = 'image' | 'tag';
-
-interface ModalZIndexContextType {
-  getNextZIndex: () => number;
-  releaseZIndex: (zIndex: number) => void;
-  getModalZIndex: (modalType: ModalType) => number;
-  setActiveModal: (modalType: ModalType) => void;
-  releaseModal: (modalType: ModalType) => void;
-  activeModal: ModalType | null;
-}
-
-const ModalZIndexContext = createContext<ModalZIndexContextType | undefined>(undefined);
-
-export const useModalZIndex = () => {
-  const context = useContext(ModalZIndexContext);
-  if (!context) {
-    throw new Error('useModalZIndex must be used within a ModalZIndexProvider');
-  }
-  return context;
-};
+import React, { useState, useCallback, ReactNode } from 'react';
+import { ModalZIndexContext, type ModalType, type ModalZIndexContextType } from './useModalZIndex';
 
 interface ModalZIndexProviderProps {
   children: ReactNode;

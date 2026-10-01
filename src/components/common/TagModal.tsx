@@ -2,13 +2,15 @@ import React, { useRef, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { createPortal } from 'react-dom';
 import { getCategoryName, getCategoryBaseClass } from '../../utils/categoryUtils';
-import { formatPostCount } from '../../utils/formatUtils';
+import { formatNumber } from '../../utils/formatUtils';
 import LoadingSpinner from './LoadingSpinner';
+import CopyButton from '../ui/CopyButton';
+import { AlertTriangle, ChevronLeft, ChevronRight, ImageOff, X } from 'lucide-react';
 import InfinitePostGallery from './InfinitePostGallery';
 import { useTagModal } from '../../context/useTagModal';
 import { useTagModalEventListener } from '../../utils/tagLinkHandler';
 import { useTagModalData } from '../../hooks/useTagModalData';
-import { useModalZIndex } from '../../context/ModalZIndexContext';
+import { useModalZIndex } from '../../context/useModalZIndex';
 
 import '../../styles/modalAnimations.css';
 import { acquireScrollLock } from '../../utils/scrollLock';
@@ -31,7 +33,7 @@ const TagModal: React.FC = () => {
     canGoBack, 
     canGoForward 
   } = useTagModal();
-  const { getModalZIndex, setActiveModal, releaseModal, activeModal } = useModalZIndex();
+  const { getModalZIndex, setActiveModal, releaseModal } = useModalZIndex();
   const { t } = useTranslation();
   
   const modalRef = useRef<HTMLDivElement>(null);
@@ -51,22 +53,21 @@ const TagModal: React.FC = () => {
     infiniteScrollError
   } = useTagModalData(selectedTag?.name);
 
-  // Gestionar z-index cuando el modal se abre/cierra
+  // Registrar/liberar el modal en el gestor de z-index cuando se abre/cierra
   useEffect(() => {
     if (isModalOpen) {
       setActiveModal('tag');
-      setZIndex(getModalZIndex('tag'));
     } else {
       releaseModal('tag');
     }
   }, [isModalOpen, setActiveModal, releaseModal]);
 
-  // Actualizar z-index cuando cambia el modal activo
+  // Actualizar z-index cuando cambia el modal activo (getModalZIndex se recrea al cambiar activeModal/openModals)
   useEffect(() => {
     if (isModalOpen) {
       setZIndex(getModalZIndex('tag'));
     }
-  }, [isModalOpen, activeModal]); // Dependemos de activeModal en lugar de getModalZIndex
+  }, [isModalOpen, getModalZIndex]);
 
   // Event listeners para eventos personalizados
   useTagModalEventListener((tagName: string) => {
@@ -168,8 +169,8 @@ const TagModal: React.FC = () => {
       if (!tagName) return;
       const ok = await copyToClipboard(tagName);
       showCopyFeedbackBubble(ok ? t('clipboard.copySuccess') : t('clipboard.copyFail'), e.clientX, e.clientY, ok);
-      link.classList.add('ring-2', ok ? 'ring-green-400':'ring-red-400');
-      setTimeout(()=>link.classList.remove('ring-2','ring-green-400','ring-red-400'),700);
+      link.classList.add('ring-2', ok ? 'ring-primary':'ring-destructive');
+      setTimeout(()=>link.classList.remove('ring-2','ring-primary','ring-destructive'),700);
     };
 
     const supportsPointer = typeof window !== 'undefined' && 'PointerEvent' in window;
@@ -187,8 +188,8 @@ const TagModal: React.FC = () => {
         if (!tagName) return;
         const ok = await copyToClipboard(tagName);
         showCopyFeedbackBubble(ok ? t('clipboard.copySuccess') : t('clipboard.copyFail'), startX, startY, ok);
-        link.classList.add('ring-2', ok ? 'ring-green-400':'ring-red-400');
-        setTimeout(()=>link.classList.remove('ring-2','ring-green-400','ring-red-400'),700);
+        link.classList.add('ring-2', ok ? 'ring-primary':'ring-destructive');
+        setTimeout(()=>link.classList.remove('ring-2','ring-primary','ring-destructive'),700);
         const now = Date.now();
         lastLongPressRef.t = now;
         lastWikiLongPressTime = now;
@@ -299,7 +300,7 @@ const TagModal: React.FC = () => {
 
   return createPortal(
     <div 
-      className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm p-2 lg:p-4"
+      className="modal-backdrop fixed inset-0 flex items-center justify-center bg-overlay/60 p-2 lg:p-6"
       style={{ zIndex }}
       role="dialog" 
       aria-modal="true"
@@ -307,7 +308,7 @@ const TagModal: React.FC = () => {
     >
       <div
         ref={modalRef}
-        className="modal-shell relative max-w-6xl h-[98vh] lg:h-[95vh] bg-surface dark:bg-[var(--color-searchcard)] rounded-lg shadow-2xl outline-none border border-subtle"
+        className="modal-shell modal-content relative h-[98vh] max-w-6xl rounded-xl border border-border bg-background text-foreground shadow-2xl outline-none lg:h-[92vh]"
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
         style={{
@@ -316,56 +317,50 @@ const TagModal: React.FC = () => {
         }}
       >
         {/* Header */}
-  <div className="flex items-center justify-between p-3 lg:p-6 border-b border-subtle flex-shrink-0 bg-surface-alt dark:bg-[var(--color-searchcard)]/60 backdrop-blur-sm">
-          {/* Botones de navegación historial */}
-          <div className="flex gap-1 lg:gap-2">
+        <div className="flex flex-shrink-0 items-center gap-2 border-b border-border px-2 py-2 lg:gap-3 lg:px-4">
+          <div className="flex gap-1">
             <button
               onClick={goBack}
               disabled={!canGoBack}
-              className="rounded-full p-1.5 lg:p-2 border border-subtle bg-surface-alt dark:bg-[var(--color-searchcard)]/70 shadow transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-40 disabled:cursor-not-allowed"
+              className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
               aria-label={t('common.previous')}
-              tabIndex={0}
             >
-              <svg className="w-4 h-4 lg:w-5 lg:h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-              </svg>
+              <ChevronLeft className="h-4 w-4" aria-hidden="true" />
             </button>
             <button
               onClick={goForward}
               disabled={!canGoForward}
-              className="rounded-full p-1.5 lg:p-2 border border-subtle bg-surface-alt dark:bg-[var(--color-searchcard)]/70 shadow transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-40 disabled:cursor-not-allowed"
+              className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
               aria-label={t('common.next')}
-              tabIndex={0}
             >
-              <svg className="w-4 h-4 lg:w-5 lg:h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-              </svg>
+              <ChevronRight className="h-4 w-4" aria-hidden="true" />
             </button>
           </div>
-          
-          {/* Título centrado */}
-          <div className="flex items-center gap-2 lg:gap-3 flex-1 justify-center min-w-0">
-            <div className={`cat-indicator ${getCategoryBaseClass(selectedTag.category)} w-3 h-3 lg:w-4 lg:h-4`} />
-            <div className="text-center min-w-0">
-              <h2 className="text-lg lg:text-xl font-semibold text-primary truncate">
+
+          <div className="flex min-w-0 flex-1 items-center justify-center gap-2.5">
+            <span className={`cat-dot ${getCategoryBaseClass(selectedTag.category)}`} aria-hidden="true" />
+            <div className="min-w-0 text-center">
+              <h2 className="truncate text-base font-semibold tracking-tight lg:text-lg">
                 {selectedTag.name.replace(/_/g, ' ')}
               </h2>
-              <p className="text-xs lg:text-sm text-subtle truncate">
-                {getCategoryName(selectedTag.category)} • {formatPostCount(selectedTag.post_count)}
+              <p className="truncate text-xs text-muted-foreground">
+                {getCategoryName(selectedTag.category)}
+                <span aria-hidden="true" className="mx-1.5 text-muted-foreground/40">·</span>
+                <span className="font-mono tabular-nums">{formatNumber(selectedTag.post_count)}</span> posts
               </p>
             </div>
           </div>
-          
-          {/* Botón de cerrar */}
-          <div className="w-12 lg:w-20 flex justify-end">
+
+          <div className="flex items-center gap-1">
+            {!selectedTag.name.startsWith('tag_group:') && (
+              <CopyButton text={selectedTag.name} label={t('ui.copyTag')} size="sm" className="hidden sm:inline-flex" />
+            )}
             <button
               onClick={closeModal}
-              className="p-1.5 lg:p-2 text-text-secondary hover:text-text bg-transparent hover:bg-surface-alt dark:hover:bg-[var(--color-searchcard)]/50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
               aria-label={t('modal.close')}
             >
-              <svg className="w-5 h-5 lg:w-6 lg:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              <X className="h-5 w-5" aria-hidden="true" />
             </button>
           </div>
         </div>
@@ -378,25 +373,23 @@ const TagModal: React.FC = () => {
             </div>
           ) : error ? (
             <div className="text-center py-12">
-              <div className="text-red-600 dark:text-red-400 mb-4">
-                <svg className="w-12 h-12 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                </svg>
-                <p className="text-lg font-medium">{t('error.loadingFailed')}</p>
-                <p className="text-sm text-gray-600 dark:text-slate-400 mt-2">{error}</p>
+              <div className="mb-4">
+                <AlertTriangle className="mx-auto mb-3 h-10 w-10 text-destructive-text" strokeWidth={1.5} aria-hidden="true" />
+                <p className="text-base font-medium">{t('modal.error')}</p>
+                <p className="mt-1 text-sm text-muted-foreground">{error}</p>
               </div>
             </div>
           ) : (
             <div className="space-y-6">
               {/* Wiki Information */}
               {wikiInfo && (
-                <div className="bg-surface-alt dark:bg-[var(--color-searchcard)]/40 rounded-lg p-4 lg:p-6 border border-subtle">
-                  <h3 className="text-lg font-semibold text-primary mb-4">
+                <div className="rounded-xl bg-card p-4 lg:p-6">
+                  <h3 className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                     {t('tag.wikiInformation')}
                   </h3>
-                  <div 
+                  <div
                     data-wiki-modal
-                    className="prose prose-sm dark:prose-invert max-w-none text-secondary"
+                    className="wiki-prose max-w-none"
                     dangerouslySetInnerHTML={{ __html: formattedWikiHtml }}
                   />
                 </div>
@@ -405,12 +398,12 @@ const TagModal: React.FC = () => {
               {/* Gallery Section (oculta para tag groups) */}
               {!selectedTag.name.startsWith('tag_group:') && (
                 <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-primary">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                       {t('tag.relatedPosts')}
                     </h3>
                     {nsfwBlockedPosts.size > 0 && (
-                      <div className="text-sm text-orange-600 dark:text-orange-400">
+                      <div className="text-xs text-warning-text">
                         {t('gallery.nsfwBlocked', { count: nsfwBlockedPosts.size })}
                       </div>
                     )}
@@ -431,12 +424,10 @@ const TagModal: React.FC = () => {
                       error={infiniteScrollError}
                     />
                   ) : (
-                    <div className="text-center py-12 text-gray-500 dark:text-slate-400">
-                      <svg className="w-12 h-12 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                      <p className="text-lg font-medium">{t('gallery.noPosts')}</p>
-                      <p className="text-sm mt-2">{t('gallery.noPostsDescription')}</p>
+                    <div className="py-12 text-center text-muted-foreground">
+                      <ImageOff className="mx-auto mb-3 h-10 w-10 text-muted-foreground/60" strokeWidth={1.5} aria-hidden="true" />
+                      <p className="text-base font-medium text-foreground">{t('gallery.noPosts')}</p>
+                      <p className="mt-1 text-sm">{t('gallery.noPostsDescription')}</p>
                     </div>
                   )}
                 </div>

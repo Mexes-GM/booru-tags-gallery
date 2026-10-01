@@ -8,12 +8,64 @@ import { copyToClipboard } from '../utils/copyUtils';
 import { showCopyFeedbackBubble } from '../utils/copyFeedbackBubble';
 import { formatPostCount } from '../utils/formatUtils';
 import LoadingSpinner from './common/LoadingSpinner';
+import CopyButton from './ui/CopyButton';
 import { DanbooruTag, DanbooruPost, DanbooruWikiPage, DanbooruPreviewImage, LocalTagData } from '../types';
 import { loadTagsData, getCachedTags } from '../utils/sharedTagDataLoader';
 import { useNSFWFilter } from '../context/useNSFWFilter';
 import { usePostImages } from '../hooks/usePostImages';
 import { useImageModal } from "../context/useImageModal";
 import SEO from './SEO';
+import { absoluteUrl } from '../config/site';
+
+// English category names for meta descriptions (the UI label is translated separately).
+const SEO_CATEGORY_NAMES: Record<number, string> = {
+  0: 'general',
+  1: 'artist',
+  3: 'copyright',
+  4: 'character',
+  5: 'meta'
+};
+
+// Reduce a DText wiki body to plain prose and return its first sentence (for meta descriptions).
+const firstWikiSentence = (body?: string | null): string => {
+  if (!body) return '';
+  const plain = body
+    .replace(/\[\[([^\]|]+)\|([^\]]+)\]\]/g, '$2')    // [[tag|label]] -> label
+    .replace(/\[\[([^\]]+)\]\]/g, '$1')               // [[tag]] -> tag
+    .replace(/\{\{([^}]+)\}\}/g, '$1')                // {{search}} -> search
+    .replace(/"([^"]+)":\[?[^\s\]]+\]?/g, '$1')       // "label":url -> label
+    .replace(/!?(post|asset) #\d+/gi, '')             // embedded posts
+    .replace(/\[\/?[a-z]+(=[^\]]*)?\]/gi, '')         // [b], [/i], [expand=...]
+    .replace(/^h\d\.\s*.*$/gim, '')                   // section headers
+    .replace(/^\s*[*#]+\s*/gm, '')                    // list bullets
+    .replace(/_/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!plain) return '';
+  const match = plain.match(/^.+?[.!?](?=\s|$)/);
+  return (match ? match[0] : plain).trim();
+};
+
+const buildTagDescription = (
+  displayName: string,
+  tag: DanbooruTag | null,
+  wikiBody?: string | null
+): string => {
+  const parts: string[] = [];
+  if (tag) {
+    const category = SEO_CATEGORY_NAMES[tag.category];
+    const count = typeof tag.post_count === 'number' ? tag.post_count.toLocaleString('en-US') : null;
+    parts.push(
+      `"${displayName}" is a ${category ? `${category} ` : ''}Danbooru tag${count ? ` with ${count} posts` : ''}.`
+    );
+  } else {
+    parts.push(`"${displayName}" Danbooru tag: wiki, examples and related tags.`);
+  }
+  const sentence = firstWikiSentence(wikiBody);
+  if (sentence) parts.push(sentence);
+  const text = parts.join(' ');
+  return text.length > 160 ? `${text.slice(0, 157).trimEnd()}…` : text;
+};
 
 // Carga diferida del componente PostGallery para mejorar el rendimiento inicial
 const PostGallery = lazy(() => import('./common/PostGallery'));
@@ -141,7 +193,7 @@ const TagDetailPage: React.FC = () => {
                     }
                     
                     return imageData;
-                  } catch (error) {
+                  } catch {
                     return null;
                   }
                 })
@@ -212,12 +264,32 @@ const TagDetailPage: React.FC = () => {
     clearImageCache();
   }, [tagName, clearImageCache]);
 
+  const displayName = tag ? tag.name.replace(/_/g, ' ') : decodeURIComponent(tagName || '').replace(/_/g, ' ');
+  const pageUrl = absoluteUrl(`/tags/${encodeURIComponent(tag?.name ?? decodeURIComponent(tagName || ''))}`);
+  const exampleGroups = Object.entries(categorizedExamplePosts).filter(([, ids]) => ids.length > 0);
+
+  const renderExampleButton = (postId: number, key: React.Key) => {
+    const index = examplePosts.indexOf(postId);
+    return (
+      <button
+        type="button"
+        key={key}
+        className={`break-words rounded-md p-2 text-center font-mono text-xs tabular-nums transition-colors ${
+          index === currentExampleIndex ? 'bg-primary text-primary-foreground' : 'bg-card hover:bg-muted'
+        }`}
+        onClick={() => { if (index !== -1) setCurrentExampleIndex(index); }}
+      >
+        #{postId}
+      </button>
+    );
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-slate-950 flex items-center justify-center">
+      <div className="min-h-[70vh] flex items-center justify-center">
         <div className="text-center px-4">
           <LoadingSpinner size="xl" color="blue" className="mx-auto mb-3 sm:mb-4" />
-          <p className="text-gray-600 dark:text-slate-400 text-sm sm:text-base">{t('modal.loading')}</p>
+          <p className="text-sm text-muted-foreground">{t('modal.loading')}</p>
         </div>
       </div>
     );
@@ -225,12 +297,12 @@ const TagDetailPage: React.FC = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-slate-950 flex items-center justify-center">
+      <div className="min-h-[70vh] flex items-center justify-center">
         <div className="text-center px-4">
-          <div className="text-red-500 text-4xl sm:text-6xl mb-3 sm:mb-4">⚠️</div>
-          <h1 className="text-xl sm:text-2xl font-bold text-primary mb-2">{t('common.error')}</h1>
-          <p className="text-gray-600 dark:text-slate-400 mb-3 sm:mb-4 text-sm sm:text-base">{error}</p>
-          <Link to="/" className="bg-blue-500 text-white px-3 sm:px-4 py-2 rounded hover:bg-blue-600 text-sm sm:text-base">
+          <div className="text-4xl mb-3">⚠️</div>
+          <h1 className="text-xl font-semibold tracking-tight mb-2">{t('common.error')}</h1>
+          <p className="mb-4 text-sm text-muted-foreground">{error}</p>
+          <Link to="/" className="inline-flex h-10 items-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90">
             {t('navigation.home')}
           </Link>
         </div>
@@ -239,28 +311,28 @@ const TagDetailPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-slate-950">
+    <div className="pb-16">
       <SEO 
-        title={tag ? tag.name.replace(/_/g, ' ') : tagName}
-        description={wikiPage?.body ? wikiPage.body.replace(/\n/g,' ').slice(0,155) + (wikiPage.body.length>155?'…':'') : `Información, wiki, ejemplos e imágenes para el tag ${tagName}`}
-        canonical={`https://danbooru-tags-explorer.netlify.app/tags/${encodeURIComponent(tagName || '')}`}
+        title={displayName}
+        description={buildTagDescription(displayName, tag, wikiPage?.body)}
+        canonical={pageUrl}
         jsonLd={{
           '@context': 'https://schema.org',
           '@type': 'Thing',
-          name: tag ? tag.name.replace(/_/g,' ') : tagName,
-          description: wikiPage?.body ? wikiPage.body.slice(0,500) : undefined,
-          url: `https://danbooru-tags-explorer.netlify.app/tags/${encodeURIComponent(tagName || '')}`,
+          name: displayName,
+          description: firstWikiSentence(wikiPage?.body) || undefined,
+          url: pageUrl,
           additionalProperty: [
             tag && { '@type': 'PropertyValue', name: 'post_count', value: tag.post_count },
-            tag && { '@type': 'PropertyValue', name: 'category', value: tag.category }
+            tag && { '@type': 'PropertyValue', name: 'category', value: SEO_CATEGORY_NAMES[tag.category] ?? tag.category }
           ].filter(Boolean)
         }}
       />
-      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 max-w-full overflow-hidden">
+      <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6">
         {/* Header con información del tag */}
-        <div className="bg-white dark:bg-slate-900 rounded-lg shadow-md p-4 sm:p-6 mb-4 sm:mb-6 overflow-hidden">
+        <div className="mb-6 overflow-hidden rounded-xl bg-card p-4 sm:p-6">
           <div className="flex items-center justify-between mb-3 sm:mb-4">
-            <Link to="/" className="text-blue-600 dark:text-blue-400 hover:underline text-sm sm:text-base">
+            <Link to="/" className="inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground">
               ← {t('navigation.home')}
             </Link>
           </div>
@@ -268,7 +340,7 @@ const TagDetailPage: React.FC = () => {
           <div className="flex flex-col md:flex-row md:items-center gap-3 sm:gap-4">
             <div className="flex-1 min-w-0">
               <h1
-                className="text-2xl sm:text-3xl font-bold text-primary mb-2 break-words cursor-pointer"
+                className="mb-2 cursor-pointer break-words text-2xl font-semibold tracking-tight sm:text-4xl"
                 title={t('tooltips.rightClickCopyTag')}
                 onContextMenu={async (e) => {
                   if (!tag?.name) return;
@@ -304,7 +376,7 @@ const TagDetailPage: React.FC = () => {
               {tag && (
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mb-3 sm:mb-4">
                   <span
-                    className={`px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium border cursor-pointer transition-all ${getCategoryColor(tag.category)} break-words`}
+                    className={`${getCategoryColor(tag.category)} cursor-pointer`}
                     title={t('tooltips.rightClickCopyCategory')}
                     onContextMenu={async (e) => {
                       e.preventDefault();
@@ -313,9 +385,9 @@ const TagDetailPage: React.FC = () => {
                       if ((e.currentTarget as any).lastLongPress && now - (e.currentTarget as any).lastLongPress < 700) return;
                       const ok = await copyToClipboard(getCategoryName(tag.category));
                       const el = e.currentTarget as HTMLElement;
-                      el.classList.add('ring-2', ok ? 'ring-green-400':'ring-red-400');
+                      el.classList.add('ring-2', ok ? 'ring-primary':'ring-destructive');
                       showCopyFeedbackBubble(ok ? t('clipboard.copySuccess') : t('clipboard.copyFail'), e.clientX, e.clientY, ok);
-                      setTimeout(()=>el.classList.remove('ring-2','ring-green-400','ring-red-400'),700);
+                      setTimeout(()=>el.classList.remove('ring-2','ring-primary','ring-destructive'),700);
                     }}
                     onTouchStart={(e) => {
                       const el = e.currentTarget as any;
@@ -324,7 +396,7 @@ const TagDetailPage: React.FC = () => {
                       const startY = firstTouch?.clientY ?? 0;
                       el._pressTimer = setTimeout(async () => {
                         const ok = await copyToClipboard(getCategoryName(tag.category));
-                        el.classList.add('ring-2', ok ? 'ring-green-400':'ring-red-400');
+                        el.classList.add('ring-2', ok ? 'ring-primary':'ring-destructive');
                         showCopyFeedbackBubble(
                           ok ? t('clipboard.copySuccess') : t('clipboard.copyFail'),
                           startX,
@@ -332,7 +404,7 @@ const TagDetailPage: React.FC = () => {
                           ok
                         );
                         el.lastLongPress = Date.now();
-                        setTimeout(()=>el.classList.remove('ring-2','ring-green-400','ring-red-400'),700);
+                        setTimeout(()=>el.classList.remove('ring-2','ring-primary','ring-destructive'),700);
                       }, 550);
                     }}
                     onTouchEnd={(e) => {
@@ -352,9 +424,10 @@ const TagDetailPage: React.FC = () => {
                   >
                     {getCategoryName(tag.category)}
                   </span>
-                  <span className="text-base sm:text-lg font-semibold text-gray-700 dark:text-slate-300">
+                  <span className="font-mono text-sm tabular-nums text-muted-foreground">
                     {formatPostCount(tag.post_count)}
                   </span>
+                  <CopyButton text={tag.name} label={t('ui.copyTag')} size="sm" className="sm:ml-auto" />
                 </div>
               )}
             </div>
@@ -362,19 +435,19 @@ const TagDetailPage: React.FC = () => {
 
           {/* Información del artista */}
           {artist && (
-            <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg p-3 sm:p-4 mb-3 sm:mb-4 overflow-hidden">
-              <h3 className="font-semibold text-green-800 dark:text-green-300 mb-2">{t('tags.category')}</h3>
+            <div className="mb-4 overflow-hidden rounded-lg bg-muted/50 p-3 sm:p-4">
+              <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">{getCategoryName(1)}</h3>
               {artist.other_names && artist.other_names.length > 0 && (
-                <p className="text-sm text-green-700 dark:text-green-400 mb-1 break-words">
+                <p className="mb-1 break-words text-sm">
                   <strong>{t('tags.aliases')}:</strong> {artist.other_names.join(', ')}
                 </p>
               )}
               {artist.url_string && (
-                <p className="text-sm text-green-700 dark:text-green-400 break-words">
+                <p className="break-words text-sm">
                   <strong>{t('tags.viewOnDanbooru')}:</strong>{' '}
                   {artist.url_string.split('\n').map((url, index) => (
                     <a key={index} href={url} target="_blank" rel="noopener noreferrer" 
-                       className="text-blue-600 dark:text-blue-400 hover:underline mr-2 break-all">
+                       className="mr-2 break-all text-primary-text underline decoration-primary-text/40 underline-offset-[3px]">
                       {url}
                     </a>
                   ))}
@@ -385,9 +458,9 @@ const TagDetailPage: React.FC = () => {
 
           {/* Posts de ejemplo de la wiki */}
           {examplePosts.length > 0 && (
-            <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg p-4 mb-4 overflow-hidden">
-              <h3 className="font-semibold text-green-800 dark:text-green-300 mb-4 flex items-center break-words">
-                📚 {t('tags.examples')} ({examplePosts.length})
+            <div className="mb-4 overflow-hidden rounded-lg bg-muted/50 p-4">
+              <h3 className="mb-4 flex items-center break-words text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                {t('tags.examples')} ({examplePosts.length})
               </h3>
               
               {/* Navegación de ejemplos */}
@@ -395,16 +468,16 @@ const TagDetailPage: React.FC = () => {
                 <div className="flex items-center justify-center space-x-4 mb-4 flex-wrap gap-2">
                   <button
                     onClick={() => setCurrentExampleIndex((prev) => (prev - 1 + exampleImages.length) % exampleImages.length)}
-                    className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-sm"
+                    className="h-8 rounded-md bg-secondary px-3 text-sm text-secondary-foreground transition-colors hover:bg-muted"
                   >
                     ← {t('common.previous')}
                   </button>
-                  <span className="text-sm font-medium whitespace-nowrap">
-                    {currentExampleIndex + 1} de {exampleImages.length}
+                  <span className="text-sm whitespace-nowrap text-muted-foreground">
+                    <span className="font-mono tabular-nums">{currentExampleIndex + 1} / {exampleImages.length}</span>
                   </span>
                   <button
                     onClick={() => setCurrentExampleIndex((prev) => (prev + 1) % exampleImages.length)}
-                    className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-sm"
+                    className="h-8 rounded-md bg-secondary px-3 text-sm text-secondary-foreground transition-colors hover:bg-muted"
                   >
                     {t('common.next')} →
                   </button>
@@ -417,10 +490,10 @@ const TagDetailPage: React.FC = () => {
                   <img
                     src={exampleImages[currentExampleIndex].preview_url}
                     alt={`Ejemplo ${currentExampleIndex + 1}`}
-                    className="max-w-full max-h-96 mx-auto rounded-lg shadow-lg cursor-pointer hover:opacity-80 transition-opacity"
+                    className="mx-auto max-h-96 max-w-full cursor-pointer rounded-lg transition-opacity hover:opacity-90"
                     onClick={() => handleImageClick(exampleImages[currentExampleIndex].post_id)}
                   />
-                  <div className="mt-2 text-sm text-gray-600 dark:text-slate-400 break-words">
+                  <div className="mt-2 break-words font-mono text-xs tabular-nums text-muted-foreground">
                     <p>Post ID: {exampleImages[currentExampleIndex].post_id}</p>
                     <p>Rating: {exampleImages[currentExampleIndex].rating}</p>
                     <p>Score: {exampleImages[currentExampleIndex].score}</p>
@@ -428,44 +501,24 @@ const TagDetailPage: React.FC = () => {
                 </div>
               )}
               
-              {/* Lista de todos los posts de ejemplo */}
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
-                {examplePosts.map((postId, index) => (
-                  <div
-                    key={postId}
-                    className={`p-2 rounded text-center cursor-pointer text-sm break-words ${
-                        index === currentExampleIndex ? 'bg-green-500 text-white' : 'bg-white dark:bg-slate-700 hover:bg-green-100 dark:hover:bg-green-900/30'
-                      }`}
-                    onClick={() => setCurrentExampleIndex(index)}
-                  >
-                    #{postId}
-                  </div>
-                ))}
-              </div>
-              
-              {/* Posts por categorías */}
-              {Object.keys(categorizedExamplePosts).length > 0 && (
-                <div className="mt-4">
-                  <h4 className="font-medium text-green-700 dark:text-green-400 mb-2">{t('tags.category')}:</h4>
-                  {Object.entries(categorizedExamplePosts).map(([category, posts]) => (
-                    <div key={category} className="mb-2">
-                      <span className="text-sm font-medium status-success capitalize break-words">{category}:</span>
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {posts.map((postId) => (
-                          <span
-                            key={postId}
-                            className="px-2 py-1 bg-white dark:bg-slate-700 rounded text-xs cursor-pointer hover:bg-green-100 dark:hover:bg-green-900/30 break-words"
-                            onClick={() => {
-                              const index = examplePosts.indexOf(postId);
-                              if (index !== -1) setCurrentExampleIndex(index);
-                            }}
-                          >
-                            #{postId}
-                          </span>
-                        ))}
+              {/* Lista de posts de ejemplo (una sola vez). Si la wiki los agrupa en varias
+                  secciones (h4./h5./h6.) se muestran agrupados; si no, como lista plana. */}
+              {exampleGroups.length > 1 ? (
+                <div className="space-y-3">
+                  {exampleGroups.map(([category, ids]) => (
+                    <div key={category}>
+                      <span className="mb-1 block break-words text-xs font-medium capitalize text-muted-foreground">
+                        {category.replace(/_/g, ' ')}
+                      </span>
+                      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
+                        {ids.map((postId, i) => renderExampleButton(postId, `${category}-${postId}-${i}`))}
                       </div>
                     </div>
                   ))}
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
+                  {examplePosts.map((postId) => renderExampleButton(postId, postId))}
                 </div>
               )}
             </div>
@@ -473,11 +526,11 @@ const TagDetailPage: React.FC = () => {
 
           {/* Contenido de la wiki */}
           {wikiPage && wikiPage.body && (
-            <div className="bg-surface-alt dark:bg-elevated border-l-4 accent border-transparent rounded-lg p-4 overflow-hidden">
-              <h3 className="font-semibold accent mb-2">{t('tags.wiki')}</h3>
+            <div className="overflow-hidden rounded-lg bg-muted/50 p-4">
+              <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">{t('tags.wiki')}</h3>
               <div 
                 data-wiki-content
-                className="text-sm text-secondary prose prose-sm dark:prose-invert max-w-none break-words"
+                className="wiki-prose max-w-none"
                 dangerouslySetInnerHTML={{ 
                   __html: formatDTextAdvanced(
                     wikiPage.body.substring(0, 500) + (wikiPage.body.length > 500 ? '...' : ''),
@@ -492,8 +545,8 @@ const TagDetailPage: React.FC = () => {
 
         {/* Tags relacionados */}
         {relatedTags && relatedTags.length > 0 && (
-          <div className="bg-surface dark:bg-surface rounded-lg shadow-md p-6 mb-6 overflow-hidden">
-            <h2 className="text-xl font-bold text-primary mb-4">{t('tags.related')}</h2>
+          <div className="mb-6 overflow-hidden rounded-xl bg-card p-4 sm:p-6">
+            <h2 className="mb-4 text-lg font-semibold tracking-tight">{t('tags.related')}</h2>
             <div className="flex flex-wrap gap-2">
               {relatedTags.slice(0, 20).map((relatedTag, index) => {
                 // Buscar el tag en los datos locales para obtener la categoría
@@ -506,7 +559,7 @@ const TagDetailPage: React.FC = () => {
                   <Link
                     key={index}
                     to={`/tags/${encodeURIComponent(relatedTag[0])}`}
-                    className={`${categoryClass} hover:opacity-80 transition-colors duration-150 break-words cursor-pointer`}
+                    className={`${categoryClass} break-words cursor-pointer`}
                     title={t('tooltips.rightClickCopyTag')}
                     onContextMenu={async (e) => {
                       e.preventDefault();
@@ -515,9 +568,9 @@ const TagDetailPage: React.FC = () => {
                       if ((e.currentTarget as any).lastLongPress && now - (e.currentTarget as any).lastLongPress < 700) return;
                       const ok = await copyToClipboard(relatedTag[0]);
                       const el = e.currentTarget as HTMLElement;
-                      el.classList.add('ring-2', ok ? 'ring-green-400':'ring-red-400');
+                      el.classList.add('ring-2', ok ? 'ring-primary':'ring-destructive');
                       showCopyFeedbackBubble(ok ? t('clipboard.copySuccess') : t('clipboard.copyFail'), e.clientX, e.clientY, ok);
-                      setTimeout(()=>el.classList.remove('ring-2','ring-green-400','ring-red-400'),700);
+                      setTimeout(()=>el.classList.remove('ring-2','ring-primary','ring-destructive'),700);
                     }}
                     onTouchStart={(e) => {
                       const el = e.currentTarget as any;
@@ -526,7 +579,7 @@ const TagDetailPage: React.FC = () => {
                       const startY = firstTouch?.clientY ?? 0;
                       el._pressTimer = setTimeout(async () => {
                         const ok = await copyToClipboard(relatedTag[0]);
-                        el.classList.add('ring-2', ok ? 'ring-green-400':'ring-red-400');
+                        el.classList.add('ring-2', ok ? 'ring-primary':'ring-destructive');
                         showCopyFeedbackBubble(
                           ok ? t('clipboard.copySuccess') : t('clipboard.copyFail'),
                           startX,
@@ -534,7 +587,7 @@ const TagDetailPage: React.FC = () => {
                           ok
                         );
                         el.lastLongPress = Date.now();
-                        setTimeout(()=>el.classList.remove('ring-2','ring-green-400','ring-red-400'),700);
+                        setTimeout(()=>el.classList.remove('ring-2','ring-primary','ring-destructive'),700);
                       }, 550);
                     }}
                     onTouchEnd={(e) => {
@@ -561,14 +614,14 @@ const TagDetailPage: React.FC = () => {
         )}
 
         {/* Galería de posts */}
-  <h2 className="text-xl font-bold text-primary mb-4">{t('tags.posts')}</h2>
+  <h2 className="mb-4 text-lg font-semibold tracking-tight">{t('tags.posts')}</h2>
         <React.Suspense fallback={<LoadingSpinner size="lg" color="blue" className="mx-auto my-8" />}>
           <PostGallery
             posts={posts}
             nsfwBlockedPosts={nsfwBlockedPosts}
             isLoading={loading}
             isNSFWFilterEnabled={isNSFWFilterEnabled}
-            emptyMessage={<p className="text-gray-500 dark:text-slate-400 text-center py-8">{t('tags.noPosts')}</p>}
+            emptyMessage={<p className="py-8 text-center text-sm text-muted-foreground">{t('tags.noPosts')}</p>}
           />
         </React.Suspense>
       </div>
@@ -576,4 +629,4 @@ const TagDetailPage: React.FC = () => {
   );
 };
 
-export default TagDetailPage;
+export default TagDetailPage;

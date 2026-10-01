@@ -1,46 +1,33 @@
-import { CATEGORY_COLORS, CATEGORY_NAMES } from '../config/appConfig'
+import i18n from '../i18n'
+import { CATEGORY_COLORS } from '../config/appConfig'
+
+const CATEGORY_KEYS: Record<number, string> = {
+  0: 'general',
+  1: 'artist',
+  3: 'copyright',
+  4: 'character',
+  5: 'meta'
+}
 
 export const getCategoryColor = (category: number): string => {
   return CATEGORY_COLORS[category] || CATEGORY_COLORS.default
 }
 
+/** Category label in the active UI language. */
 export const getCategoryName = (category: number): string => {
-  return CATEGORY_NAMES[category] || 'Desconocido'
+  const key = CATEGORY_KEYS[category]
+  return key ? i18n.t(`search.categories.${key}`) : i18n.t('common.none')
 }
 
-// Eliminadas funciones hex deprecated: se usan clases semánticas + variables.
-
 export const getCategoryClass = (category: number): string => {
-  // Clases semánticas definidas en variables CSS (index.css)
-  switch(category) {
-    case 0: return 'cat-badge cat-general'
-    case 1: return 'cat-badge cat-artist'
-    case 3: return 'cat-badge cat-copyright'
-    case 4: return 'cat-badge cat-character'
-    case 5: return 'cat-badge cat-meta'
-    default: return 'cat-badge cat-default'
-  }
+  // Clases semánticas definidas en index.css (.cat-badge + matiz por categoría)
+  return `cat-badge ${getCategoryBaseClass(category)}`
 }
 
 export const getCategoryBaseClass = (category: number): string => {
-  // Solo la clase base (sin 'cat-badge') para usar en indicadores circulares
-  switch(category) {
-    case 0: return 'cat-general'
-    case 1: return 'cat-artist'
-    case 3: return 'cat-copyright'
-    case 4: return 'cat-character'
-    case 5: return 'cat-meta'
-    default: return 'cat-default'
-  }
+  // Solo la clase de matiz (sin 'cat-badge') para puntos e indicadores
+  const key = CATEGORY_KEYS[category]
+  return key ? `cat-${key}` : 'cat-default'
 }
 
-export const getCategoryLabel = (category: number): string => {
-  switch(category) {
-    case 0: return 'General'
-    case 1: return 'Artista'
-    case 3: return 'Copyright'
-    case 4: return 'Personaje'
-    case 5: return 'Meta'
-    default: return 'Otro'
-  }
-}
+export const getCategoryLabel = getCategoryName

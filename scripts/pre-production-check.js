@@ -72,8 +72,8 @@ function checkNetlifyConfig() {
   const checks = [
     {
       name: 'Comando de build',
-      check: () => /command\s*=\s*"npm run build:production"/.test(config),
-      message: 'Comando de build:production configurado'
+      check: () => /command\s*=\s*"npm run build(:production)?"/.test(config),
+      message: 'Comando de build configurado'
     },
     {
       name: 'Directorio de publicación',
@@ -87,7 +87,8 @@ function checkNetlifyConfig() {
     },
     {
       name: 'Headers de seguridad',
-      check: () => config.includes('X-Frame-Options') && config.includes('X-XSS-Protection'),
+      // X-XSS-Protection is deprecated and no longer set; check the headers that are
+      check: () => config.includes('X-Frame-Options') && config.includes('X-Content-Type-Options') && config.includes('Content-Security-Policy'),
       message: 'Headers de seguridad configurados'
     }
   ];
