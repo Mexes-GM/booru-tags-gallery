@@ -108,6 +108,8 @@ export default defineConfig(({ mode }) => ({
   define: {
     'process.env.NODE_ENV': JSON.stringify(mode === 'production' ? 'production' : 'development'),
     __DEV__: mode !== 'production',
+    // Vercel sets VERCEL=1 during its builds; Netlify builds of the same repo get false.
+    __ON_VERCEL__: JSON.stringify(process.env.VERCEL === '1'),
   },
   resolve: {
     alias: {
