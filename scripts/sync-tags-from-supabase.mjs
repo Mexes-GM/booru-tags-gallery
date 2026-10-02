@@ -21,7 +21,9 @@
 //
 // Credentials (first match wins), from the environment, .env.local, .env or --env:
 //   SUPABASE_URL | NEXT_PUBLIC_SUPABASE_URL
-//   SUPABASE_SERVICE_ROLE_KEY | SUPABASE_SECRET_KEY | SUPABASE_ANON_KEY | NEXT_PUBLIC_SUPABASE_ANON_KEY
+//   SUPABASE_ANON_KEY | NEXT_PUBLIC_SUPABASE_ANON_KEY | SUPABASE_PUBLISHABLE_KEY | NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+// Only the public (anon) key is used: the table is world-readable already, and
+// a service-role key would bypass RLS, which this read-only script never needs.
 // The key never leaves this script; it is not bundled into the site.
 
 import fs from 'node:fs';
@@ -69,10 +71,10 @@ function loadEnvFile(file) {
 function resolveCredentials() {
   const pick = (...names) => names.map((n) => process.env[n]).find(Boolean);
   const url = pick('SUPABASE_URL', 'NEXT_PUBLIC_SUPABASE_URL');
-  const key = pick('SUPABASE_SERVICE_ROLE_KEY', 'SUPABASE_SECRET_KEY', 'SUPABASE_ANON_KEY', 'NEXT_PUBLIC_SUPABASE_ANON_KEY');
+  const key = pick('SUPABASE_ANON_KEY', 'NEXT_PUBLIC_SUPABASE_ANON_KEY', 'SUPABASE_PUBLISHABLE_KEY', 'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY');
   if (!url || !key) {
     throw new Error(
-      'Supabase credentials not found. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (or an anon key) ' +
+      'Supabase credentials not found. Set SUPABASE_URL and SUPABASE_ANON_KEY ' +
       'in .env.local, or pass --env ../booru-prompt-gallery/.env.local'
     );
   }
@@ -97,7 +99,6 @@ async function fetchPage({ url, key }, from) {
       Authorization: `Bearer ${key}`,
       Range: `${from}-${from + PAGE_SIZE - 1}`,
       'Range-Unit': 'items',
-      Prefer: from === 0 ? 'count=exact' : 'count=none',
     },
   });
   if (!res.ok) throw new Error(`Supabase ${res.status}: ${(await res.text()).slice(0, 300)}`);
